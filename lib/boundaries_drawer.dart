@@ -50,7 +50,7 @@ class BoundariesDrawerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
-      ..color = Colors.red
+      ..color = Colors.orange
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
@@ -66,6 +66,8 @@ class BoundariesDrawerPainter extends CustomPainter {
       canvas.drawLine(previousPoint, currentPoint, paint);
       previousPoint = currentPoint;
     }
+
+    canvas.drawLine(previousPoint, pointToOffset(points.first, size), paint);
   }
 
   @override

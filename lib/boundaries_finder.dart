@@ -1,6 +1,8 @@
-import 'dart:developer';
 import 'dart:math';
+import 'package:boundaries_detector/utils/angle.dart';
 import 'package:image/image.dart' as i;
+
+import 'utils/distortion.dart';
 
 class Boundaries {
   const Boundaries({
@@ -9,6 +11,9 @@ class Boundaries {
     required this.right,
     required this.bottom,
     required this.allPoints,
+    required this.xMoveTo,
+    required this.yMoveTo,
+    required this.recognizedObjects,
   });
 
   final Point<int> left;
@@ -16,6 +21,10 @@ class Boundaries {
   final Point<int> right;
   final Point<int> bottom;
   final List<Point<int>> allPoints;
+  final List<int> recognizedObjects;
+
+  final XAxis xMoveTo;
+  final YAxis yMoveTo;
 
   List<Point<int>> get corners => [
         left,
@@ -29,11 +38,21 @@ bool isWhite(i.Pixel pixel) => pixel.r == 255 && pixel.g == 255 && pixel.b == 25
 
 bool isBlack(i.Pixel pixel) => pixel.r == 0 && pixel.g == 0 && pixel.b == 0;
 
-Boundaries findBoundaries(i.Image image, {int threshold = 3}) {
+extension ExtendedIntPoint on Point<int> {
+  int get ltSum => x + y;
+  int get rtSum => x - y;
+  int get rbSum => ltSum;
+  int get lbSum => y - x;
+}
+
+Boundaries findBoundaries(i.Image image, {int matrixSize = 3, int minSize = 100, double angleThreshold = 2}) {
   final int width = image.width;
   final int height = image.height;
 
-  final List<Point<int>> contours = [];
+  List<Point<int>> allPoints = [];
+
+  /// List of amount of dots per object
+  final List<int> recognizedObjects = [];
 
   final List<List<bool>> visited = List.generate(
     image.height,
@@ -42,25 +61,22 @@ Boundaries findBoundaries(i.Image image, {int threshold = 3}) {
 
   final List<Point<int>> directions = [];
 
-  for (int x = -threshold; x < threshold; x++) {
-    for (int y = -threshold; y < threshold; y++) {
+  for (int x = -matrixSize; x < matrixSize; x++) {
+    for (int y = -matrixSize; y < matrixSize; y++) {
       directions.add(Point(x, y));
     }
   }
 
-  Point<int> mostLeft = Point(width, 0);
-  Point<int> mostTop = Point(0, height);
-  Point<int> mostRight = const Point(0, 0);
-  Point<int> mostBottom = const Point(0, 0);
-
   bool isInside(int x, int y) => x >= 0 && y >= 0 && x < image.width && y < image.height;
 
-  List<Point<int>> traceContour(int startX, int startY) {
-    final List<Point<int>> contour = [];
-    final List<Point<int>> stack = [Point(startX, startY)];
+  List<Point<int>> findPathPoints(int startX, int startY) {
+    final List<Point<int>> points = [];
+    final List<Point<int>> currentPath = [Point(startX, startY)];
+    const int takeEveryNth = 4;
+    int counter = 0;
 
-    while (stack.isNotEmpty) {
-      Point<int> point = stack.removeLast();
+    while (currentPath.isNotEmpty) {
+      Point<int> point = currentPath.removeLast();
       int x = point.x;
       int y = point.y;
 
@@ -69,34 +85,27 @@ Boundaries findBoundaries(i.Image image, {int threshold = 3}) {
       }
 
       visited[y][x] = true;
-      contour.add(point);
 
-      if (x < mostLeft.x) {
-        mostLeft = point;
+      if (counter % takeEveryNth == 0) {
+        points.add(point);
       }
 
-      if (x > mostRight.x) {
-        mostRight = point;
-      }
-
-      if (y < mostTop.y) {
-        mostTop = point;
-      }
-
-      if (y > mostBottom.y) {
-        mostBottom = point;
-      }
+      counter++;
 
       for (Point<int> direction in directions) {
         int newX = x + direction.x;
         int newY = y + direction.y;
-        if (isInside(newX, newY) && !visited[newY][newX]) {
-          stack.add(Point(newX, newY));
+        if (isInside(newX, newY) && visited[newY][newX] == false) {
+          currentPath.add(Point(newX, newY));
         }
       }
     }
 
-    return contour;
+    if (points.length >= minSize) {
+      return points;
+    } else {
+      return [];
+    }
   }
 
   for (int y = 0; y < image.height; y++) {
@@ -106,14 +115,57 @@ Boundaries findBoundaries(i.Image image, {int threshold = 3}) {
       final bool canBeVisited = visited[y][x] == false;
 
       if (canBeVisited && isPixelWhite) {
-        List<Point<int>> contour = traceContour(x, y);
+        final List<Point<int>> points = findPathPoints(x, y);
 
-        if (contour.isNotEmpty) {
-          contours.addAll(contour);
+        if (points.length > allPoints.length) {
+          allPoints = points;
+        }
+
+        if (points.isNotEmpty) {
+          recognizedObjects.add(points.length);
         }
       }
     }
   }
 
-  return Boundaries(left: mostLeft, top: mostTop, right: mostRight, bottom: mostBottom, allPoints: contours);
+  Point<int> leftTop = Point(width, 0);
+  Point<int> rightTop = Point(0, height);
+  Point<int> rightBottom = const Point(0, 0);
+  Point<int> leftBottom = const Point(0, 0);
+
+  for (final Point<int> point in allPoints) {
+    if (point.ltSum < leftTop.ltSum) {
+      leftTop = point;
+    } else if (point.rtSum > rightTop.rtSum) {
+      rightTop = point;
+    } else if (point.rbSum > rightBottom.rbSum) {
+      rightBottom = point;
+    } else if (point.lbSum > leftBottom.lbSum) {
+      leftBottom = point;
+    }
+  }
+
+  final double leftTopAngle = angle(leftBottom, leftTop, rightTop);
+  final double rightTopAngle = angle(leftTop, rightTop, rightBottom);
+  final double rightBottomAngle = angle(rightTop, rightBottom, leftBottom);
+  final double leftBottomAngle = angle(rightBottom, leftBottom, leftTop);
+
+  final Distortion distortionLevel = distortion(
+    topLeft: leftTopAngle,
+    topRight: rightTopAngle,
+    bottomLeft: leftBottomAngle,
+    bottomRight: rightBottomAngle,
+    threshold: angleThreshold,
+  );
+
+  return Boundaries(
+    left: leftTop,
+    top: rightTop,
+    right: rightBottom,
+    bottom: leftBottom,
+    allPoints: allPoints,
+    xMoveTo: distortionLevel.x,
+    yMoveTo: distortionLevel.y,
+    recognizedObjects: recognizedObjects,
+  );
 }

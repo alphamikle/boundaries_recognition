@@ -5,39 +5,25 @@ import 'package:boundaries_detector/boundaries_drawer.dart';
 import 'package:boundaries_detector/boundaries_finder.dart';
 import 'package:boundaries_detector/settings.dart';
 import 'package:boundaries_detector/threshold.dart';
+import 'package:boundaries_detector/utils/convert_image.dart';
+import 'package:boundaries_detector/utils/distortion.dart';
+import 'package:boundaries_detector/utils/throttle.dart';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as i;
+
+import 'utils/bench.dart';
 
 /*
 Pretty good results without isles
 GA: 6.25
 SA: 1.25
-C-TH: 253
-S-TH: 10
+C-TH: 150
+S-TH: 3
+Size: 40
+Angle: 2.20
  */
-
-final Map<String, int> _benchKeys = {};
-
-void start(String id) => _benchKeys[id] = DateTime.now().microsecondsSinceEpoch;
-
-void stop(
-  String id, {
-  bool clear = false,
-}) {
-  final int? start = _benchKeys[id];
-  if (start == null) {
-    return;
-  }
-
-  final int now = DateTime.now().microsecondsSinceEpoch;
-
-  print('$id: ${(now - start) / 1000}ms');
-
-  if (clear) {
-    _benchKeys.remove(id);
-  }
-}
 
 void main() {
   runApp(const MyApp());
@@ -69,16 +55,27 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final ScrollController scrollController = ScrollController();
+  CameraController? cameraController;
+
   String get size => '300_400';
+  // wipes_and_card_240_320_v2.jpg
+  // wipes_240_320_v1.jpg
+  String? get imagePath => true ? 'wipes_and_card_240_320_v2.jpg' : null;
   bool get usePieces => false;
+  bool get useCamera => true;
 
   Uint8List? image;
   Uint8List? imageWithFilters;
+  i.Image? convertedImage;
+
   bool showFilters = false;
-  bool showPainter = false;
-  bool onlyCorners = false;
+  bool showPainter = true;
+  bool onlyCorners = true;
 
   List<Point<int>> points = [];
+  XAxis xMoveTo = XAxis.center;
+  YAxis yMoveTo = YAxis.center;
   int? width;
   int? height;
 
@@ -86,15 +83,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Settings settings = const Settings(
     grayscale: FilterSettings(
-      amount: 1,
+      amount: 6.25,
       maskChannel: 0,
     ),
     sobel: FilterSettings(
-      amount: 1,
+      amount: 1.25,
       maskChannel: 0,
     ),
-    colorThreshold: 128,
-    searchThreshold: 1,
+    colorThreshold: 150,
+    searchThreshold: 3,
+    groupSize: 40,
+    angle: 2.20,
   );
 
   void applySettings(Settings settings) {
@@ -105,14 +104,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void applyFilters() {
     final Uint8List? image = this.image;
+    final i.Image? convertedImage = this.convertedImage;
 
-    if (image == null) {
+    if (image == null && convertedImage == null) {
       return;
     }
 
     start('Filters');
 
-    i.Image? imageToProcess = i.decodeJpg(image);
+    i.Image? imageToProcess = convertedImage ?? i.decodeJpg(image!);
 
     if (imageToProcess == null) {
       return;
@@ -132,10 +132,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
     start('Boundaries');
 
-    final Boundaries boundaries = findBoundaries(imageToProcess);
+    final Boundaries boundaries = findBoundaries(
+      imageToProcess,
+      matrixSize: settings.searchThreshold,
+      minSize: settings.groupSize,
+      angleThreshold: settings.angle,
+    );
     points = onlyCorners ? boundaries.corners : boundaries.allPoints;
 
-    print('Found ${boundaries.allPoints} points!');
+    print('Image size: [$width x $height]; Found ${boundaries.allPoints.length} points in the largest object and ${boundaries.recognizedObjects} objects');
+
+    xMoveTo = boundaries.xMoveTo;
+    yMoveTo = boundaries.yMoveTo;
 
     stop('Boundaries', clear: true);
 
@@ -171,44 +179,69 @@ class _MyHomePageState extends State<MyHomePage> {
     applyTimer = Timer(const Duration(milliseconds: 750), applyFilters);
   }
 
+  Future<void> handleImage(CameraImage cameraImage) async {
+    Throttle.run('handle_image', () async {
+      convertedImage = convertToImage(cameraImage);
+      applyFilters();
+    });
+  }
+
   Future<void> loadImage() async {
-    final ByteData bytes = await rootBundle.load(usePieces ? 'assets/pieces_$size/00.jpg' : 'assets/card_$size.jpg');
+    final ByteData bytes = await rootBundle.load(
+      imagePath == null
+          ? usePieces
+              ? 'assets/pieces_$size/00.jpg'
+              : 'assets/card_$size.jpg'
+          : 'assets/$imagePath',
+    );
     image = bytes.buffer.asUint8List();
     imageWithFilters = bytes.buffer.asUint8List();
+    setState(() {});
+  }
+
+  Future<void> initCamera() async {
+    final cameras = await availableCameras();
+    cameraController = CameraController(cameras[0], ResolutionPreset.low);
+    await cameraController?.initialize();
+    cameraController?.startImageStream(handleImage);
     setState(() {});
   }
 
   @override
   void initState() {
     super.initState();
-    loadImage();
+    if (useCamera) {
+      initCamera();
+    } else {
+      loadImage();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
+        key: const PageStorageKey('list_view'),
+        // controller: scrollController,
         children: [
           Expanded(
-            child: image == null && imageWithFilters == null
-                ? const SizedBox(
-                    height: 50,
-                    width: 50,
-                    child: CircularProgressIndicator(),
+            child: useCamera && cameraController == null || useCamera == false && image == null
+                ? const Center(
+                    child: SizedBox(
+                      height: 50,
+                      width: 50,
+                      child: CircularProgressIndicator(),
+                    ),
                   )
                 : Stack(
                     fit: StackFit.passthrough,
                     children: [
-                      Image.memory(
-                        showFilters ? imageWithFilters! : image!,
-                        fit: BoxFit.cover,
-                      ),
-                      if (showPainter && points.isNotEmpty && width != null && height != null)
-                        Positioned.fill(
-                          child: ColoredBox(
-                            color: Colors.yellow.withOpacity(0.15),
-                          ),
-                        ),
+                      useCamera
+                          ? CameraPreview(cameraController!)
+                          : Image.memory(
+                              showFilters ? imageWithFilters! : image!,
+                              fit: BoxFit.cover,
+                            ),
                       if (showPainter && points.isNotEmpty && width != null && height != null)
                         Positioned.fill(
                           child: BoundariesDrawer(
@@ -217,6 +250,32 @@ class _MyHomePageState extends State<MyHomePage> {
                             height: height!,
                           ),
                         ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Text(
+                              // ⬅️↖️↙️➡️️↗️↘️️⬇️⬆️️⏺️
+                              switch ((xMoveTo, yMoveTo)) {
+                                (XAxis.left, YAxis.top) => '↖️',
+                                (XAxis.left, YAxis.bottom) => '↙️',
+                                (XAxis.left, YAxis.center) => '⬅️',
+                                (XAxis.right, YAxis.top) => '↗️',
+                                (XAxis.right, YAxis.bottom) => '↘️️',
+                                (XAxis.right, YAxis.center) => '➡️',
+                                (XAxis.center, YAxis.top) => '⬆️',
+                                (XAxis.center, YAxis.bottom) => '⬇️',
+                                (XAxis.center, YAxis.center) => '⏺️',
+                              },
+                              style: const TextStyle(fontSize: 30),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
           ),
@@ -268,27 +327,44 @@ class _MyHomePageState extends State<MyHomePage> {
             divisions: 24,
             label: 'S-TH: ${settings.searchThreshold.toStringAsFixed(0)}',
           ),
+          Slider(
+            value: settings.groupSize.toDouble(),
+            onChanged: (double value) => applySettings(settings.change(groupSize: value.toInt())),
+            min: 1,
+            max: 100,
+            divisions: 98,
+            label: 'Size: ${settings.groupSize.toStringAsFixed(0)}',
+          ),
+          Slider(
+            value: settings.angle.toDouble(),
+            onChanged: (double value) => applySettings(settings.change(angle: value)),
+            min: 0,
+            max: 5,
+            divisions: 25,
+            label: 'Angle: ${settings.angle.toStringAsFixed(2)}',
+          ),
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                TextButton(
-                  onPressed: toggleFilters,
-                  child: Text(
-                    showFilters ? 'Filters -' : 'Filters +',
+                if (useCamera == false)
+                  TextButton(
+                    onPressed: toggleFilters,
+                    child: Text(
+                      showFilters ? 'Filters ✅️' : 'Filters ⬜️',
+                    ),
                   ),
-                ),
                 TextButton(
                   onPressed: togglePainter,
                   child: Text(
-                    showPainter ? 'Painter -' : 'Painter +',
+                    showPainter ? 'Paint ✅️' : 'Paint ⬜️',
                   ),
                 ),
                 TextButton(
                   onPressed: toggleCorners,
                   child: Text(
-                    onlyCorners ? 'Corners -' : 'Corners +',
+                    onlyCorners ? 'Corners ✅️' : 'Corners ⬜️',
                   ),
                 ),
               ],
