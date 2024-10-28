@@ -6,6 +6,7 @@ class Settings {
     required this.searchThreshold,
     required this.groupSize,
     required this.angle,
+    required this.proportionThreshold,
   });
 
   final FilterSettings grayscale;
@@ -14,6 +15,7 @@ class Settings {
   final int searchThreshold;
   final int groupSize;
   final double angle;
+  final double proportionThreshold;
 
   Settings copyWith({
     FilterSettings? grayscale,
@@ -22,6 +24,7 @@ class Settings {
     int? searchThreshold,
     int? groupSize,
     double? angle,
+    double? proportionThreshold,
   }) {
     return Settings(
       grayscale: grayscale ?? this.grayscale,
@@ -30,6 +33,7 @@ class Settings {
       searchThreshold: searchThreshold ?? this.searchThreshold,
       groupSize: groupSize ?? this.groupSize,
       angle: angle ?? this.angle,
+      proportionThreshold: proportionThreshold ?? this.proportionThreshold,
     );
   }
 
@@ -42,6 +46,7 @@ class Settings {
     int? searchThreshold,
     int? groupSize,
     double? angle,
+    double? proportionThreshold,
   }) {
     return copyWith(
       grayscale: grayscale.copyWith(
@@ -56,6 +61,7 @@ class Settings {
       searchThreshold: searchThreshold ?? this.searchThreshold,
       groupSize: groupSize ?? this.groupSize,
       angle: angle ?? this.angle,
+      proportionThreshold: proportionThreshold ?? this.proportionThreshold,
     );
   }
 }

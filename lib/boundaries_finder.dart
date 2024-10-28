@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:boundaries_detector/utils/angle.dart';
+import 'package:boundaries_detector/utils/distance.dart';
 import 'package:image/image.dart' as i;
 
 import 'utils/distortion.dart';
@@ -16,10 +17,10 @@ class Boundaries {
     required this.recognizedObjects,
   });
 
-  final Point<int> left;
-  final Point<int> top;
-  final Point<int> right;
-  final Point<int> bottom;
+  final Point<int>? left;
+  final Point<int>? top;
+  final Point<int>? right;
+  final Point<int>? bottom;
   final List<Point<int>> allPoints;
   final List<int> recognizedObjects;
 
@@ -31,7 +32,7 @@ class Boundaries {
         top,
         right,
         bottom,
-      ];
+      ].nonNulls.toList();
 }
 
 bool isWhite(i.Pixel pixel) => pixel.r == 255 && pixel.g == 255 && pixel.b == 255;
@@ -45,7 +46,13 @@ extension ExtendedIntPoint on Point<int> {
   int get lbSum => y - x;
 }
 
-Boundaries findBoundaries(i.Image image, {int matrixSize = 3, int minSize = 100, double angleThreshold = 2}) {
+Boundaries findBoundaries(
+  i.Image image, {
+  int matrixSize = 3,
+  int minSize = 100,
+  double angleThreshold = 2,
+  double proportionThreshold = 0.25,
+}) {
   final int width = image.width;
   final int height = image.height;
 
@@ -145,6 +152,29 @@ Boundaries findBoundaries(i.Image image, {int matrixSize = 3, int minSize = 100,
     }
   }
 
+  final List<Point<int>> corners = [leftTop, rightTop, rightBottom, leftBottom]..sort((a, b) => a.x.compareTo(b.x));
+  final List<Point<int>> leftCorners = [corners[0], corners[1]]..sort((a, b) => a.y.compareTo(b.y));
+  final List<Point<int>> rightCorners = [corners[2], corners[3]]..sort((a, b) => a.y.compareTo(b.y));
+
+  leftTop = leftCorners[0];
+  leftBottom = leftCorners[1];
+
+  rightTop = rightCorners[0];
+  rightBottom = rightCorners[1];
+
+  final double topDistance = distance(leftTop, rightTop);
+  final double rightDistance = distance(rightTop, rightBottom);
+  final double bottomDistance = distance(rightBottom, leftBottom);
+  final double leftDistance = distance(leftBottom, leftTop);
+
+  bool wrongFigure = false;
+
+  if (distanceDifference(topDistance, bottomDistance) > proportionThreshold) {
+    wrongFigure = true;
+  } else if (distanceDifference(rightDistance, leftDistance) > proportionThreshold) {
+    wrongFigure = true;
+  }
+
   final double leftTopAngle = angle(leftBottom, leftTop, rightTop);
   final double rightTopAngle = angle(leftTop, rightTop, rightBottom);
   final double rightBottomAngle = angle(rightTop, rightBottom, leftBottom);
@@ -157,6 +187,19 @@ Boundaries findBoundaries(i.Image image, {int matrixSize = 3, int minSize = 100,
     bottomRight: rightBottomAngle,
     threshold: angleThreshold,
   );
+
+  if (wrongFigure) {
+    return const Boundaries(
+      left: null,
+      top: null,
+      right: null,
+      bottom: null,
+      allPoints: [],
+      xMoveTo: XAxis.center,
+      yMoveTo: YAxis.center,
+      recognizedObjects: [],
+    );
+  }
 
   return Boundaries(
     left: leftTop,

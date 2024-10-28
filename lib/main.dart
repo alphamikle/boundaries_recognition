@@ -7,6 +7,7 @@ import 'package:boundaries_detector/settings.dart';
 import 'package:boundaries_detector/threshold.dart';
 import 'package:boundaries_detector/utils/convert_image.dart';
 import 'package:boundaries_detector/utils/distortion.dart';
+import 'package:boundaries_detector/utils/rotate.dart';
 import 'package:boundaries_detector/utils/throttle.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,8 @@ SA: 1.25
 C-TH: 150
 S-TH: 3
 Size: 40
-Angle: 2.20
+Angle: 5.00
+P-TH: 0.26
  */
 
 void main() {
@@ -61,13 +63,14 @@ class _MyHomePageState extends State<MyHomePage> {
   String get size => '300_400';
   // wipes_and_card_240_320_v2.jpg
   // wipes_240_320_v1.jpg
-  String? get imagePath => true ? 'wipes_and_card_240_320_v2.jpg' : null;
+  String? get imagePath => 1 == 0 ? 'wipes_240_320_v2.jpg' : null;
   bool get usePieces => false;
-  bool get useCamera => true;
+  bool get useCamera => 1 == 1;
 
   Uint8List? image;
   Uint8List? imageWithFilters;
   i.Image? convertedImage;
+  DeviceOrientation? orientation;
 
   bool showFilters = false;
   bool showPainter = true;
@@ -93,7 +96,8 @@ class _MyHomePageState extends State<MyHomePage> {
     colorThreshold: 150,
     searchThreshold: 3,
     groupSize: 40,
-    angle: 2.20,
+    angle: 5.00,
+    proportionThreshold: 0.26,
   );
 
   void applySettings(Settings settings) {
@@ -118,10 +122,22 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
 
+    if (orientation != null && orientation != DeviceOrientation.portraitUp && cameraController != null) {
+      imageToProcess = fixRotationV2(imageToProcess, cameraController!);
+    }
+
+    final double aspectRatio = imageToProcess.width / imageToProcess.height;
+    if (aspectRatio > 1) {
+      imageToProcess = i.copyRotate(imageToProcess, angle: 90);
+    }
+
+    print('Orientation: $orientation');
+
     width = imageToProcess.width;
     height = imageToProcess.height;
 
     imageToProcess = i.grayscale(imageToProcess, amount: settings.grayscale.amount, maskChannel: i.Channel.values[settings.grayscale.maskChannel]);
+    imageToProcess = i.gaussianBlur(imageToProcess, radius: 2);
     imageToProcess = i.sobel(imageToProcess, amount: settings.sobel.amount, maskChannel: i.Channel.values[settings.sobel.maskChannel]);
 
     if (settings.colorThreshold > 0 && settings.colorThreshold < 255) {
@@ -137,6 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
       matrixSize: settings.searchThreshold,
       minSize: settings.groupSize,
       angleThreshold: settings.angle,
+      proportionThreshold: settings.proportionThreshold,
     );
     points = onlyCorners ? boundaries.corners : boundaries.allPoints;
 
@@ -182,6 +199,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> handleImage(CameraImage cameraImage) async {
     Throttle.run('handle_image', () async {
       convertedImage = convertToImage(cameraImage);
+      orientation = cameraController?.value.deviceOrientation;
       applyFilters();
     });
   }
@@ -224,7 +242,9 @@ class _MyHomePageState extends State<MyHomePage> {
         key: const PageStorageKey('list_view'),
         // controller: scrollController,
         children: [
-          Expanded(
+          /// ? Camera view or Image view
+          AspectRatio(
+            aspectRatio: 3 / 4,
             child: useCamera && cameraController == null || useCamera == false && image == null
                 ? const Center(
                     child: SizedBox(
@@ -279,72 +299,93 @@ class _MyHomePageState extends State<MyHomePage> {
                     ],
                   ),
           ),
-          Slider(
-            value: settings.grayscale.amount,
-            onChanged: (double value) => applySettings(settings.change(grayscaleAmount: value)),
-            min: 0,
-            max: 10,
-            divisions: 40,
-            label: 'GA: ${settings.grayscale.amount.toStringAsFixed(2)}',
+
+          /// @ Settings
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Slider(
+                    value: settings.grayscale.amount,
+                    onChanged: (double value) => applySettings(settings.change(grayscaleAmount: value)),
+                    min: 0,
+                    max: 10,
+                    divisions: 40,
+                    label: 'GA: ${settings.grayscale.amount.toStringAsFixed(2)}',
+                  ),
+                  Slider(
+                    value: settings.grayscale.maskChannel.toDouble(),
+                    onChanged: (double value) => applySettings(settings.change(grayscaleMaskChannel: value.toInt())),
+                    min: 0,
+                    max: (i.Channel.values.length - 1).toDouble(),
+                    divisions: i.Channel.values.length - 1,
+                    label: 'GM: ${settings.grayscale.maskChannel.toStringAsFixed(0)}',
+                  ),
+                  Slider(
+                    value: settings.sobel.amount,
+                    onChanged: (double value) => applySettings(settings.change(sobelAmount: value)),
+                    min: 0,
+                    max: 10,
+                    divisions: 40,
+                    label: 'SA: ${settings.sobel.amount.toStringAsFixed(2)}',
+                  ),
+                  Slider(
+                    value: settings.sobel.maskChannel.toDouble(),
+                    onChanged: (double value) => applySettings(settings.change(sobelMaskChannel: value.toInt())),
+                    min: 0,
+                    max: (i.Channel.values.length - 1).toDouble(),
+                    divisions: i.Channel.values.length - 1,
+                    label: 'SM: ${settings.sobel.maskChannel.toStringAsFixed(0)}',
+                  ),
+                  Slider(
+                    value: settings.colorThreshold.toDouble(),
+                    onChanged: (double value) => applySettings(settings.change(colorThreshold: value.toInt())),
+                    min: 0,
+                    max: 255,
+                    divisions: 254,
+                    label: 'C-TH: ${settings.colorThreshold.toStringAsFixed(0)}',
+                  ),
+                  Slider(
+                    value: settings.searchThreshold.toDouble(),
+                    onChanged: (double value) => applySettings(settings.change(searchThreshold: value.toInt())),
+                    min: 1,
+                    max: 25,
+                    divisions: 24,
+                    label: 'S-TH: ${settings.searchThreshold.toStringAsFixed(0)}',
+                  ),
+                  Slider(
+                    value: settings.groupSize.toDouble(),
+                    onChanged: (double value) => applySettings(settings.change(groupSize: value.toInt())),
+                    min: 1,
+                    max: 100,
+                    divisions: 98,
+                    label: 'Size: ${settings.groupSize.toStringAsFixed(0)}',
+                  ),
+                  Slider(
+                    value: settings.angle.toDouble(),
+                    onChanged: (double value) => applySettings(settings.change(angle: value)),
+                    min: 0,
+                    max: 5,
+                    divisions: 25,
+                    label: 'Angle: ${settings.angle.toStringAsFixed(2)}',
+                  ),
+                  Slider(
+                    value: settings.proportionThreshold.toDouble(),
+                    onChanged: (double value) => applySettings(settings.change(proportionThreshold: value)),
+                    min: 0,
+                    max: 0.5,
+                    divisions: 25,
+                    label: 'P-TH: ${settings.proportionThreshold.toStringAsFixed(2)}',
+                  ),
+                ],
+              ),
+            ),
           ),
-          Slider(
-            value: settings.grayscale.maskChannel.toDouble(),
-            onChanged: (double value) => applySettings(settings.change(grayscaleMaskChannel: value.toInt())),
-            min: 0,
-            max: (i.Channel.values.length - 1).toDouble(),
-            divisions: i.Channel.values.length - 1,
-            label: 'GM: ${settings.grayscale.maskChannel.toStringAsFixed(0)}',
-          ),
-          Slider(
-            value: settings.sobel.amount,
-            onChanged: (double value) => applySettings(settings.change(sobelAmount: value)),
-            min: 0,
-            max: 10,
-            divisions: 40,
-            label: 'SA: ${settings.sobel.amount.toStringAsFixed(2)}',
-          ),
-          Slider(
-            value: settings.sobel.maskChannel.toDouble(),
-            onChanged: (double value) => applySettings(settings.change(sobelMaskChannel: value.toInt())),
-            min: 0,
-            max: (i.Channel.values.length - 1).toDouble(),
-            divisions: i.Channel.values.length - 1,
-            label: 'SM: ${settings.sobel.maskChannel.toStringAsFixed(0)}',
-          ),
-          Slider(
-            value: settings.colorThreshold.toDouble(),
-            onChanged: (double value) => applySettings(settings.change(colorThreshold: value.toInt())),
-            min: 0,
-            max: 255,
-            divisions: 254,
-            label: 'C-TH: ${settings.colorThreshold.toStringAsFixed(0)}',
-          ),
-          Slider(
-            value: settings.searchThreshold.toDouble(),
-            onChanged: (double value) => applySettings(settings.change(searchThreshold: value.toInt())),
-            min: 1,
-            max: 25,
-            divisions: 24,
-            label: 'S-TH: ${settings.searchThreshold.toStringAsFixed(0)}',
-          ),
-          Slider(
-            value: settings.groupSize.toDouble(),
-            onChanged: (double value) => applySettings(settings.change(groupSize: value.toInt())),
-            min: 1,
-            max: 100,
-            divisions: 98,
-            label: 'Size: ${settings.groupSize.toStringAsFixed(0)}',
-          ),
-          Slider(
-            value: settings.angle.toDouble(),
-            onChanged: (double value) => applySettings(settings.change(angle: value)),
-            min: 0,
-            max: 5,
-            divisions: 25,
-            label: 'Angle: ${settings.angle.toStringAsFixed(2)}',
-          ),
+
+          /// @ Buttons
           Padding(
-            padding: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
