@@ -1,20 +1,17 @@
 import 'dart:async';
+import 'dart:developer' as dev;
 import 'dart:math';
 
-import 'package:boundaries_detector/boundaries_drawer.dart';
-import 'package:boundaries_detector/boundaries_finder.dart';
-import 'package:boundaries_detector/settings.dart';
-import 'package:boundaries_detector/threshold.dart';
-import 'package:boundaries_detector/utils/convert_image.dart';
-import 'package:boundaries_detector/utils/distortion.dart';
-import 'package:boundaries_detector/utils/rotate.dart';
-import 'package:boundaries_detector/utils/throttle.dart';
 import 'package:camera/camera.dart';
+import 'package:edge_vision/edge_vision.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as i;
 
-import 'utils/bench.dart';
+import 'boundaries_drawer.dart';
+import 'camera_image_extensions.dart';
+import 'image_extensions.dart';
+import 'throttle.dart';
 
 /*
 Pretty good results without isles
@@ -57,7 +54,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final ScrollController scrollController = ScrollController();
+  final EdgeVision edgeVision = EdgeVision(threads: 1);
   CameraController? cameraController;
 
   String get size => '300_400';
@@ -85,19 +82,14 @@ class _MyHomePageState extends State<MyHomePage> {
   Timer? applyTimer;
 
   Settings settings = const Settings(
-    grayscale: FilterSettings(
-      amount: 6.25,
-      maskChannel: 0,
-    ),
-    sobel: FilterSettings(
-      amount: 1.25,
-      maskChannel: 0,
-    ),
-    colorThreshold: 150,
-    searchThreshold: 3,
-    groupSize: 40,
-    angle: 5.00,
-    proportionThreshold: 0.26,
+    blackWhiteThreshold: 150,
+    blurRadius: 2,
+    distortionAngleThreshold: 5,
+    grayscaleAmount: 6.25,
+    minObjectSize: 40,
+    searchMatrixSize: 3,
+    skewnessThreshold: 0.26,
+    sobelAmount: 1.25,
   );
 
   void applySettings(Settings settings) {
@@ -106,15 +98,13 @@ class _MyHomePageState extends State<MyHomePage> {
     applyTimer = Timer(const Duration(milliseconds: 750), applyFilters);
   }
 
-  void applyFilters() {
+  Future<void> applyFilters() async {
     final Uint8List? image = this.image;
     final i.Image? convertedImage = this.convertedImage;
 
     if (image == null && convertedImage == null) {
       return;
     }
-
-    start('Filters');
 
     i.Image? imageToProcess = convertedImage ?? i.decodeJpg(image!);
 
@@ -123,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     if (orientation != null && orientation != DeviceOrientation.portraitUp && cameraController != null) {
-      imageToProcess = fixRotationV2(imageToProcess, cameraController!);
+      imageToProcess = imageToProcess.rotateWithController(cameraController!);
     }
 
     final double aspectRatio = imageToProcess.width / imageToProcess.height;
@@ -131,51 +121,30 @@ class _MyHomePageState extends State<MyHomePage> {
       imageToProcess = i.copyRotate(imageToProcess, angle: 90);
     }
 
-    print('Orientation: $orientation');
-
     width = imageToProcess.width;
     height = imageToProcess.height;
 
-    imageToProcess = i.grayscale(imageToProcess, amount: settings.grayscale.amount, maskChannel: i.Channel.values[settings.grayscale.maskChannel]);
-    imageToProcess = i.gaussianBlur(imageToProcess, radius: 2);
-    imageToProcess = i.sobel(imageToProcess, amount: settings.sobel.amount, maskChannel: i.Channel.values[settings.sobel.maskChannel]);
+    final Edges edges = await edgeVision.findImageEdges(image: imageToProcess);
 
-    if (settings.colorThreshold > 0 && settings.colorThreshold < 255) {
-      threshold(imageToProcess, settings.colorThreshold);
-    }
+    points = onlyCorners ? edges.corners : edges.allPoints;
 
-    stop('Filters', clear: true);
+    dev.log('Image size: [$width x $height]; Found ${edges.allPoints.length} points in the largest object and ${edges.recognizedObjects} objects');
 
-    start('Boundaries');
-
-    final Boundaries boundaries = findBoundaries(
-      imageToProcess,
-      matrixSize: settings.searchThreshold,
-      minSize: settings.groupSize,
-      angleThreshold: settings.angle,
-      proportionThreshold: settings.proportionThreshold,
-    );
-    points = onlyCorners ? boundaries.corners : boundaries.allPoints;
-
-    print('Image size: [$width x $height]; Found ${boundaries.allPoints.length} points in the largest object and ${boundaries.recognizedObjects} objects');
-
-    xMoveTo = boundaries.xMoveTo;
-    yMoveTo = boundaries.yMoveTo;
-
-    stop('Boundaries', clear: true);
+    xMoveTo = edges.xMoveTo;
+    yMoveTo = edges.yMoveTo;
 
     imageWithFilters = i.encodeJpg(imageToProcess);
 
     setState(() {});
   }
 
-  void toggleFilters() {
+  Future<void> toggleFilters() async {
     if (showFilters) {
       setState(() => showFilters = false);
       return;
     }
 
-    applyFilters();
+    await applyFilters();
 
     setState(() => showFilters = true);
   }
@@ -197,11 +166,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> handleImage(CameraImage cameraImage) async {
-    Throttle.run('handle_image', () async {
-      convertedImage = convertToImage(cameraImage);
-      orientation = cameraController?.value.deviceOrientation;
-      applyFilters();
-    });
+    await Throttle.run(
+      'handle_image',
+      () async {
+        convertedImage = cameraImage.toImage();
+        orientation = cameraController?.value.deviceOrientation;
+        await applyFilters();
+      },
+    );
   }
 
   Future<void> loadImage() async {
@@ -221,7 +193,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final cameras = await availableCameras();
     cameraController = CameraController(cameras[0], ResolutionPreset.low);
     await cameraController?.initialize();
-    cameraController?.startImageStream(handleImage);
+    await cameraController?.startImageStream(handleImage);
     setState(() {});
   }
 
@@ -229,9 +201,9 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     if (useCamera) {
-      initCamera();
+      unawaited(initCamera());
     } else {
-      loadImage();
+      unawaited(loadImage());
     }
   }
 
@@ -239,8 +211,6 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
-        key: const PageStorageKey('list_view'),
-        // controller: scrollController,
         children: [
           /// ? Camera view or Image view
           AspectRatio(
@@ -307,76 +277,55 @@ class _MyHomePageState extends State<MyHomePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Slider(
-                    value: settings.grayscale.amount,
-                    onChanged: (double value) => applySettings(settings.change(grayscaleAmount: value)),
-                    min: 0,
+                    value: settings.grayscaleAmount,
+                    onChanged: (double value) => applySettings(settings.copyWith(grayscaleAmount: value)),
                     max: 10,
                     divisions: 40,
-                    label: 'GA: ${settings.grayscale.amount.toStringAsFixed(2)}',
+                    label: 'GA: ${settings.grayscaleAmount.toStringAsFixed(2)}',
                   ),
                   Slider(
-                    value: settings.grayscale.maskChannel.toDouble(),
-                    onChanged: (double value) => applySettings(settings.change(grayscaleMaskChannel: value.toInt())),
-                    min: 0,
-                    max: (i.Channel.values.length - 1).toDouble(),
-                    divisions: i.Channel.values.length - 1,
-                    label: 'GM: ${settings.grayscale.maskChannel.toStringAsFixed(0)}',
-                  ),
-                  Slider(
-                    value: settings.sobel.amount,
-                    onChanged: (double value) => applySettings(settings.change(sobelAmount: value)),
-                    min: 0,
+                    value: settings.sobelAmount,
+                    onChanged: (double value) => applySettings(settings.copyWith(sobelAmount: value)),
                     max: 10,
                     divisions: 40,
-                    label: 'SA: ${settings.sobel.amount.toStringAsFixed(2)}',
+                    label: 'SA: ${settings.sobelAmount.toStringAsFixed(2)}',
                   ),
                   Slider(
-                    value: settings.sobel.maskChannel.toDouble(),
-                    onChanged: (double value) => applySettings(settings.change(sobelMaskChannel: value.toInt())),
-                    min: 0,
-                    max: (i.Channel.values.length - 1).toDouble(),
-                    divisions: i.Channel.values.length - 1,
-                    label: 'SM: ${settings.sobel.maskChannel.toStringAsFixed(0)}',
-                  ),
-                  Slider(
-                    value: settings.colorThreshold.toDouble(),
-                    onChanged: (double value) => applySettings(settings.change(colorThreshold: value.toInt())),
-                    min: 0,
+                    value: settings.blackWhiteThreshold.toDouble(),
+                    onChanged: (double value) => applySettings(settings.copyWith(blackWhiteThreshold: value.toInt())),
                     max: 255,
                     divisions: 254,
-                    label: 'C-TH: ${settings.colorThreshold.toStringAsFixed(0)}',
+                    label: 'C-TH: ${settings.blackWhiteThreshold.toStringAsFixed(0)}',
                   ),
                   Slider(
-                    value: settings.searchThreshold.toDouble(),
-                    onChanged: (double value) => applySettings(settings.change(searchThreshold: value.toInt())),
+                    value: settings.searchMatrixSize.toDouble(),
+                    onChanged: (double value) => applySettings(settings.copyWith(searchMatrixSize: value.toInt())),
                     min: 1,
                     max: 25,
                     divisions: 24,
-                    label: 'S-TH: ${settings.searchThreshold.toStringAsFixed(0)}',
+                    label: 'S-TH: ${settings.searchMatrixSize.toStringAsFixed(0)}',
                   ),
                   Slider(
-                    value: settings.groupSize.toDouble(),
-                    onChanged: (double value) => applySettings(settings.change(groupSize: value.toInt())),
+                    value: settings.minObjectSize.toDouble(),
+                    onChanged: (double value) => applySettings(settings.copyWith(minObjectSize: value.toInt())),
                     min: 1,
                     max: 100,
                     divisions: 98,
-                    label: 'Size: ${settings.groupSize.toStringAsFixed(0)}',
+                    label: 'Size: ${settings.minObjectSize.toStringAsFixed(0)}',
                   ),
                   Slider(
-                    value: settings.angle.toDouble(),
-                    onChanged: (double value) => applySettings(settings.change(angle: value)),
-                    min: 0,
+                    value: settings.distortionAngleThreshold.toDouble(),
+                    onChanged: (double value) => applySettings(settings.copyWith(distortionAngleThreshold: value)),
                     max: 5,
                     divisions: 25,
-                    label: 'Angle: ${settings.angle.toStringAsFixed(2)}',
+                    label: 'Angle: ${settings.distortionAngleThreshold.toStringAsFixed(2)}',
                   ),
                   Slider(
-                    value: settings.proportionThreshold.toDouble(),
-                    onChanged: (double value) => applySettings(settings.change(proportionThreshold: value)),
-                    min: 0,
+                    value: settings.skewnessThreshold.toDouble(),
+                    onChanged: (double value) => applySettings(settings.copyWith(skewnessThreshold: value)),
                     max: 0.5,
                     divisions: 25,
-                    label: 'P-TH: ${settings.proportionThreshold.toStringAsFixed(2)}',
+                    label: 'P-TH: ${settings.skewnessThreshold.toStringAsFixed(2)}',
                   ),
                 ],
               ),

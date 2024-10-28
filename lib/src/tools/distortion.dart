@@ -1,19 +1,6 @@
-enum XAxis {
-  left,
-  right,
-  center,
-}
+import '../edge_vision/edges.dart';
 
-enum YAxis {
-  top,
-  bottom,
-  center,
-}
-
-const double sideSum = 180;
-
-typedef Distortion = ({XAxis x, YAxis y});
-
+/// Calculates the direction to which the camera should be pointed to reduce the degree of distortion of the rectangle edges
 Distortion distortion({
   required double topLeft,
   required double topRight,

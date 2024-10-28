@@ -1,7 +1,7 @@
-name: boundaries_detector
-description: "Boundaries detector"
-publish_to: 'none'
-version: 1.0.0+1
+name: edge_vision
+description: "EdgeVision — A Flutter package for accurate and efficient object boundary detection. Capture clean contours and sharp edges effortlessly, making it ideal for applications like document scanning and object recognition. Simple to integrate, precise in action."
+version: 0.0.1
+homepage: https://alphamikle.dev
 
 environment:
   sdk: ^3.6.0-175.0.dev
@@ -9,18 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
   image: ^4.3.0
   camera: ^0.11.0+2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
-
-flutter:
-  uses-material-design: true
-  assets:
-    - assets/
-    - assets/pieces_600_800/
-    - assets/pieces_768_1024/
+  nanc_lints: ^1.0.0
