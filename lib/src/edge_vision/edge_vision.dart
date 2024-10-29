@@ -21,8 +21,11 @@ class EdgeVision {
   Future<Edges> findImageEdges({
     required i.Image image,
     Settings settings = const Settings(),
+    bool preparedImage = false,
   }) async {
-    image = await prepareImage(image: image, settings: settings);
+    if (preparedImage == false) {
+      image = await prepareImage(image: image, settings: settings);
+    }
 
     start('Finding edges');
 
@@ -167,10 +170,14 @@ class EdgeVision {
 
     if (wrongFigure) {
       return const Edges(
-        left: null,
-        top: null,
-        right: null,
-        bottom: null,
+        leftMiddle: null,
+        leftTop: null,
+        topMiddle: null,
+        rightTop: null,
+        rightMiddle: null,
+        rightBottom: null,
+        bottomMiddle: null,
+        leftBottom: null,
         allPoints: [],
         xMoveTo: XAxis.center,
         yMoveTo: YAxis.center,
@@ -179,10 +186,14 @@ class EdgeVision {
     }
 
     return Edges(
-      left: leftTop,
-      top: rightTop,
-      right: rightBottom,
-      bottom: leftBottom,
+      leftMiddle: null,
+      leftTop: leftTop,
+      topMiddle: null,
+      rightTop: rightTop,
+      rightMiddle: null,
+      rightBottom: rightBottom,
+      bottomMiddle: null,
+      leftBottom: leftBottom,
       allPoints: allPoints,
       xMoveTo: distortionLevel.x,
       yMoveTo: distortionLevel.y,
@@ -199,12 +210,14 @@ class EdgeVision {
 
     i.Image imageToProcess = image;
 
-    imageToProcess = i.grayscale(imageToProcess, amount: settings.grayscaleAmount);
-    imageToProcess = i.gaussianBlur(imageToProcess, radius: settings.blurRadius);
-    imageToProcess = i.sobel(imageToProcess, amount: settings.sobelAmount);
+    final Settings(:blackWhiteThreshold, :sobelAmount, :grayscaleAmount, :blurRadius) = settings;
 
-    if (settings.blackWhiteThreshold > 0 && settings.blackWhiteThreshold < 255) {
-      imageToProcess = imageToProcess.toBlackWhite(settings.blackWhiteThreshold);
+    imageToProcess = i.grayscale(imageToProcess, amount: grayscaleAmount);
+    imageToProcess = i.gaussianBlur(imageToProcess, radius: blurRadius);
+    imageToProcess = i.sobel(imageToProcess, amount: sobelAmount);
+
+    if (blackWhiteThreshold > 0 && blackWhiteThreshold < 255) {
+      imageToProcess = imageToProcess.toBlackWhite(blackWhiteThreshold);
     }
 
     stop('Image preparing');

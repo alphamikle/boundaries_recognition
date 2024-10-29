@@ -24,5 +24,3 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
-    - assets/pieces_600_800/
-    - assets/pieces_768_1024/

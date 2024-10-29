@@ -8,14 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as i;
 
+import 'bench.dart';
 import 'boundaries_drawer.dart';
 import 'camera_image_extensions.dart';
-import 'image_extensions.dart';
 import 'throttle.dart';
 
 /*
 Pretty good results without isles
-GA: 6.25
+GA: 1.00 for light background and 6.25 for dark
 SA: 1.25
 C-TH: 150
 S-TH: 3
@@ -57,16 +57,16 @@ class _MyHomePageState extends State<MyHomePage> {
   final EdgeVision edgeVision = EdgeVision(threads: 1);
   CameraController? cameraController;
 
-  String get size => '300_400';
-  // wipes_and_card_240_320_v2.jpg
-  // wipes_240_320_v1.jpg
-  String? get imagePath => 1 == 0 ? 'wipes_240_320_v2.jpg' : null;
-  bool get usePieces => false;
-  bool get useCamera => 1 == 1;
+  String? get imagePath => 'i3_small';
+  int get maxSize => 500;
+  int get threads => 1;
+  bool get useCamera => true;
 
   Uint8List? image;
-  Uint8List? imageWithFilters;
-  i.Image? convertedImage;
+  Uint8List? filtersImage;
+  Uint8List? customFiltersImage;
+  i.Image? cameraImage;
+
   DeviceOrientation? orientation;
 
   bool showFilters = false;
@@ -79,13 +79,21 @@ class _MyHomePageState extends State<MyHomePage> {
   int? width;
   int? height;
 
+  bool grayscaleApplied = false;
+  bool blurApplied = false;
+  bool resized = false;
+  bool sobelApplied = false;
+  bool blackAndWhiteApplied = false;
+
+  bool get customFiltersApplied => grayscaleApplied || blurApplied || resized || sobelApplied || blackAndWhiteApplied;
+
   Timer? applyTimer;
 
   Settings settings = const Settings(
     blackWhiteThreshold: 150,
     blurRadius: 2,
     distortionAngleThreshold: 5,
-    grayscaleAmount: 6.25,
+    grayscaleAmount: 1.00,
     minObjectSize: 40,
     searchMatrixSize: 3,
     skewnessThreshold: 0.26,
@@ -95,36 +103,128 @@ class _MyHomePageState extends State<MyHomePage> {
   void applySettings(Settings settings) {
     setState(() => this.settings = settings);
     applyTimer?.cancel();
-    applyTimer = Timer(const Duration(milliseconds: 750), applyFilters);
+    applyTimer = Timer(const Duration(milliseconds: 400), applyFilters);
   }
 
-  Future<void> applyFilters() async {
-    final Uint8List? image = this.image;
-    final i.Image? convertedImage = this.convertedImage;
-
-    if (image == null && convertedImage == null) {
+  void applyCustomFilter({
+    bool? grayscaleApplied,
+    bool? blurApplied,
+    bool? resized,
+    bool? sobelApplied,
+    bool? blackAndWhiteApplied,
+  }) {
+    if (this.image == null) {
       return;
     }
 
-    i.Image? imageToProcess = convertedImage ?? i.decodeJpg(image!);
+    if (grayscaleApplied != null) {
+      this.grayscaleApplied = grayscaleApplied;
+    }
+    if (blurApplied != null) {
+      this.blurApplied = blurApplied;
+    }
+    if (resized != null) {
+      this.resized = resized;
+    }
+    if (sobelApplied != null) {
+      this.sobelApplied = sobelApplied;
+    }
+    if (blackAndWhiteApplied != null) {
+      this.blackAndWhiteApplied = blackAndWhiteApplied;
+    }
+
+    i.Image image = i.decodeJpg(this.image!)!;
+
+    if (this.resized) {
+      final int largeSize = max(image.width, image.height);
+      if (largeSize >= maxSize) {
+        final int smallSize = min(image.width, image.height);
+        final int delimiter = largeSize ~/ maxSize;
+
+        final int newLargeSize = maxSize;
+        final int newSmallSize = smallSize ~/ delimiter;
+
+        final bool isPortrait = image.height >= image.width;
+
+        image = image.resize(isPortrait ? newSmallSize : newLargeSize, isPortrait ? newLargeSize : newSmallSize);
+      }
+    }
+    if (this.grayscaleApplied) {
+      image = i.grayscale(image, amount: settings.grayscaleAmount);
+    }
+    if (this.blurApplied) {
+      image = i.gaussianBlur(image, radius: settings.blurRadius);
+    }
+    if (this.sobelApplied) {
+      image = i.sobel(image, amount: settings.sobelAmount);
+    }
+    if (this.blackAndWhiteApplied) {
+      image = image.toBlackWhite(settings.blackWhiteThreshold);
+    }
+
+    if (customFiltersApplied) {
+      customFiltersImage = i.encodeJpg(image);
+    } else {
+      customFiltersImage = null;
+    }
+
+    setState(() {});
+  }
+
+  Future<void> applyFilters() async {
+    if (customFiltersApplied) {
+      applyCustomFilter();
+    }
+
+    final Uint8List? image = this.image;
+    final i.Image? cameraImage = this.cameraImage;
+
+    if (image == null && cameraImage == null && customFiltersImage == null) {
+      return;
+    }
+
+    i.Image? imageToProcess = customFiltersImage == null ? cameraImage ?? i.decodeJpg(image!) : i.decodeJpg(customFiltersImage!);
 
     if (imageToProcess == null) {
       return;
     }
 
-    if (orientation != null && orientation != DeviceOrientation.portraitUp && cameraController != null) {
-      imageToProcess = imageToProcess.rotateWithController(cameraController!);
+    if (customFiltersApplied == false) {
+      if (max(imageToProcess.width, imageToProcess.height) > maxSize) {
+        start('Resizing');
+        final int largeSize = max(imageToProcess.width, imageToProcess.height);
+        final int smallSize = min(imageToProcess.width, imageToProcess.height);
+        final int delimiter = largeSize ~/ maxSize;
+
+        final int newLargeSize = maxSize;
+        final int newSmallSize = smallSize ~/ delimiter;
+
+        final bool isPortrait = imageToProcess.height >= imageToProcess.width;
+
+        imageToProcess = imageToProcess.resize(isPortrait ? newSmallSize : newLargeSize, isPortrait ? newLargeSize : newSmallSize);
+        stop('Resizing');
+      }
+
+      if (orientation != null && orientation != DeviceOrientation.portraitUp && cameraController != null) {
+        start('Rotating 1');
+        imageToProcess = imageToProcess.rotateWithController(cameraController!);
+        stop('Rotating 1');
+      }
+
+      final double aspectRatio = imageToProcess.width / imageToProcess.height;
+      if (aspectRatio > 1) {
+        start('Rotating 2');
+        imageToProcess = i.copyRotate(imageToProcess, angle: 90);
+        stop('Rotating 2');
+      }
+
+      width = imageToProcess.width;
+      height = imageToProcess.height;
+      imageToProcess = await edgeVision.prepareImage(image: imageToProcess, settings: settings);
+      filtersImage = i.encodeJpg(imageToProcess);
     }
 
-    final double aspectRatio = imageToProcess.width / imageToProcess.height;
-    if (aspectRatio > 1) {
-      imageToProcess = i.copyRotate(imageToProcess, angle: 90);
-    }
-
-    width = imageToProcess.width;
-    height = imageToProcess.height;
-
-    final Edges edges = await edgeVision.findImageEdges(image: imageToProcess);
+    final Edges edges = await edgeVision.findImageEdges(image: imageToProcess, settings: settings, preparedImage: true);
 
     points = onlyCorners ? edges.corners : edges.allPoints;
 
@@ -132,8 +232,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
     xMoveTo = edges.xMoveTo;
     yMoveTo = edges.yMoveTo;
-
-    imageWithFilters = i.encodeJpg(imageToProcess);
 
     setState(() {});
   }
@@ -162,14 +260,13 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
     setState(() => onlyCorners = !onlyCorners);
-    applyTimer = Timer(const Duration(milliseconds: 750), applyFilters);
   }
 
   Future<void> handleImage(CameraImage cameraImage) async {
     await Throttle.run(
       'handle_image',
       () async {
-        convertedImage = cameraImage.toImage();
+        this.cameraImage = cameraImage.toImage();
         orientation = cameraController?.value.deviceOrientation;
         await applyFilters();
       },
@@ -177,15 +274,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> loadImage() async {
-    final ByteData bytes = await rootBundle.load(
-      imagePath == null
-          ? usePieces
-              ? 'assets/pieces_$size/00.jpg'
-              : 'assets/card_$size.jpg'
-          : 'assets/$imagePath',
-    );
+    final ByteData bytes = await rootBundle.load('assets/$imagePath.jpg');
     image = bytes.buffer.asUint8List();
-    imageWithFilters = bytes.buffer.asUint8List();
+    filtersImage = bytes.buffer.asUint8List();
     setState(() {});
   }
 
@@ -226,12 +317,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 : Stack(
                     fit: StackFit.passthrough,
                     children: [
-                      useCamera
-                          ? CameraPreview(cameraController!)
-                          : Image.memory(
-                              showFilters ? imageWithFilters! : image!,
-                              fit: BoxFit.cover,
-                            ),
+                      if (showFilters)
+                        Image.memory(filtersImage!)
+                      else
+                        useCamera
+                            ? CameraPreview(cameraController!)
+                            : Image.memory(
+                                customFiltersImage == null ? image! : customFiltersImage!,
+                                fit: BoxFit.cover,
+                              ),
                       if (showPainter && points.isNotEmpty && width != null && height != null)
                         Positioned.fill(
                           child: BoundariesDrawer(
@@ -276,6 +370,34 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TextButton(
+                          onPressed: () => applyCustomFilter(grayscaleApplied: !grayscaleApplied),
+                          child: Text(grayscaleApplied ? 'Gray ✅️' : 'Gray ⬜️'),
+                        ),
+                        TextButton(
+                          onPressed: () => applyCustomFilter(blurApplied: !blurApplied),
+                          child: Text(blurApplied ? 'Blur ✅️' : 'Blur ⬜️'),
+                        ),
+                        TextButton(
+                          onPressed: () => applyCustomFilter(resized: !resized),
+                          child: Text(resized ? 'Small ✅️' : 'Small ⬜️'),
+                        ),
+                        TextButton(
+                          onPressed: () => applyCustomFilter(sobelApplied: !sobelApplied),
+                          child: Text(sobelApplied ? 'Sobel ✅️' : 'Sobel ⬜️'),
+                        ),
+                        TextButton(
+                          onPressed: () => applyCustomFilter(blackAndWhiteApplied: !blackAndWhiteApplied),
+                          child: Text(blackAndWhiteApplied ? 'B/W ✅️' : 'B/W ⬜️'),
+                        ),
+                      ],
+                    ),
+                  ),
                   Slider(
                     value: settings.grayscaleAmount,
                     onChanged: (double value) => applySettings(settings.copyWith(grayscaleAmount: value)),
@@ -338,13 +460,12 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                if (useCamera == false)
-                  TextButton(
-                    onPressed: toggleFilters,
-                    child: Text(
-                      showFilters ? 'Filters ✅️' : 'Filters ⬜️',
-                    ),
+                TextButton(
+                  onPressed: toggleFilters,
+                  child: Text(
+                    showFilters ? 'Filters ✅️' : 'Filters ⬜️',
                   ),
+                ),
                 TextButton(
                   onPressed: togglePainter,
                   child: Text(
