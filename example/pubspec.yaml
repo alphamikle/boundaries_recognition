@@ -12,13 +12,21 @@ dependencies:
   cupertino_icons: ^1.0.8
   image: ^4.3.0
   camera: ^0.11.0+2
+  bloc: ^8.1.4
+  flutter_bloc: ^8.1.6
+  autoequal: ^0.9.1
+  equatable: ^2.0.5
+  copy_with_extension: ^5.0.4
   edge_vision:
     path: ../
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  nanc_lints: ^1.0.0
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.13
+  autoequal_gen: ^0.9.1
+  copy_with_extension_gen: ^5.0.4
 
 flutter:
   uses-material-design: true

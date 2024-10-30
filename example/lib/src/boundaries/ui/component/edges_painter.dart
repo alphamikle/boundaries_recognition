@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-class BoundariesDrawer extends StatelessWidget {
-  const BoundariesDrawer({
+class EdgesPainter extends StatelessWidget {
+  const EdgesPainter({
     required this.points,
     required this.width,
     required this.height,
@@ -17,7 +17,7 @@ class BoundariesDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: BoundariesDrawerPainter(
+      painter: _Painter(
         points: points,
         width: width,
         height: height,
@@ -26,8 +26,8 @@ class BoundariesDrawer extends StatelessWidget {
   }
 }
 
-class BoundariesDrawerPainter extends CustomPainter {
-  const BoundariesDrawerPainter({
+class _Painter extends CustomPainter {
+  const _Painter({
     required this.points,
     required this.width,
     required this.height,
@@ -61,7 +61,7 @@ class BoundariesDrawerPainter extends CustomPainter {
     Offset previousPoint = pointToOffset(points.first, size);
 
     for (int i = 1; i < points.length; i++) {
-      Offset currentPoint = pointToOffset(points[i], size);
+      final Offset currentPoint = pointToOffset(points[i], size);
 
       canvas.drawLine(previousPoint, currentPoint, paint);
       previousPoint = currentPoint;

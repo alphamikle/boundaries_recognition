@@ -12,16 +12,17 @@ import 'edges.dart';
 import 'settings.dart';
 
 class EdgeVision {
-  EdgeVision({
-    required this.threads,
+  const EdgeVision({
+    this.threads,
   });
 
-  final int threads;
+  final int? threads;
 
   Future<Edges> findImageEdges({
     required i.Image image,
     Settings settings = const Settings(),
     bool preparedImage = false,
+    int? threads,
   }) async {
     if (preparedImage == false) {
       image = await prepareImage(image: image, settings: settings);
@@ -205,6 +206,7 @@ class EdgeVision {
   Future<i.Image> prepareImage({
     required i.Image image,
     Settings settings = const Settings(),
+    int? threads,
   }) async {
     start('Image preparing');
 
