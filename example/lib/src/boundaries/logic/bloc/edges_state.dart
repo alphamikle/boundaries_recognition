@@ -12,9 +12,12 @@ part 'edges_state.g.dart';
 class EdgesState extends Equatable {
   const EdgesState({
     required this.images,
-    required this.settings,
+    required this.imagesList,
+    required this.lightSettings,
+    required this.darkSettings,
     required this.maxImageSize,
     required this.threads,
+    required this.darkSettingsOn,
     required this.grayScaleOn,
     required this.blurOn,
     required this.resizeOn,
@@ -22,29 +25,42 @@ class EdgesState extends Equatable {
     required this.bwOn,
     required this.dotsCloudOn,
     required this.painterOn,
+    required this.processing,
+    required this.opacity,
   });
 
   factory EdgesState.initial() => const EdgesState(
         images: {},
-        settings: Settings(),
+        imagesList: [],
+        lightSettings: Settings.light(),
+        darkSettings: Settings.dark(),
         maxImageSize: 400,
         threads: 1,
-        grayScaleOn: false,
-        blurOn: false,
+        darkSettingsOn: false,
+        grayScaleOn: true,
+        blurOn: true,
         resizeOn: false,
-        sobelOn: false,
-        bwOn: false,
+        sobelOn: true,
+        bwOn: true,
         dotsCloudOn: false,
         painterOn: true,
+        processing: false,
+        opacity: 0.35,
       );
 
   final Map<String, ImageResult> images;
 
-  final Settings settings;
+  final List<ImageResult> imagesList;
+
+  final Settings lightSettings;
+
+  final Settings darkSettings;
 
   final int maxImageSize;
 
   final int threads;
+
+  final bool darkSettingsOn;
 
   final bool grayScaleOn;
 
@@ -59,6 +75,12 @@ class EdgesState extends Equatable {
   final bool dotsCloudOn;
 
   final bool painterOn;
+
+  final bool processing;
+
+  final double opacity;
+
+  Settings get settings => darkSettingsOn ? darkSettings : lightSettings;
 
   @override
   List<Object?> get props => _$props;

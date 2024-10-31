@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as dev;
 import 'dart:math';
 
 import 'package:bloc/bloc.dart';
@@ -75,6 +76,13 @@ class EdgesBloc extends Cubit<EdgesState> {
     await _applyFilters();
   }
 
+  Future<void> toggleDarkSettings() async {
+    emit(state.copyWith(darkSettingsOn: !state.darkSettingsOn));
+    await _applyFilters();
+  }
+
+  void updateOpacity(double opacity) => emit(state.copyWith(opacity: opacity));
+
   Future<void> loadImage(String fileName) async {
     if (state.images.containsKey(fileName)) {
       return;
@@ -82,13 +90,15 @@ class EdgesBloc extends Cubit<EdgesState> {
 
     final ByteData bytes = await rootBundle.load('assets/$fileName.jpg');
     final Uint8List image = bytes.buffer.asUint8List();
+    final ImageResult imageResult = ImageResult.fromOriginalImage(fileName, image);
 
     emit(
       state.copyWith(
         images: {
           ...state.images,
-          fileName: ImageResult.fromOriginalImage(image),
+          fileName: imageResult,
         },
+        imagesList: [...state.imagesList, imageResult],
       ),
     );
 
@@ -96,11 +106,26 @@ class EdgesBloc extends Cubit<EdgesState> {
   }
 
   Future<void> applySettings(ValueChanger<Settings> emitter) async {
-    emit(
-      state.copyWith(
-        settings: emitter(state.settings),
-      ),
-    );
+    final bool isDark = state.darkSettingsOn;
+
+    final Settings settings = emitter(state.settings);
+
+    if (isDark) {
+      emit(
+        state.copyWith(
+          darkSettings: settings,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          lightSettings: settings,
+        ),
+      );
+    }
+
+    dev.log(settings.toString());
+
     await _applyFilters();
   }
 
@@ -109,10 +134,13 @@ class EdgesBloc extends Cubit<EdgesState> {
       'filters_apply',
       delay: const Duration(milliseconds: 250),
       () async {
+        emit(state.copyWith(processing: true));
         for (final MapEntry(:key, :value) in state.images.entries) {
           await _applyFiltersToImage(key, value);
-          await sleep(250);
+
+          await sleep(25);
         }
+        emit(state.copyWith(processing: false));
       },
     );
   }
@@ -144,10 +172,10 @@ class EdgesBloc extends Cubit<EdgesState> {
     Image image = decodeJpg(imageResult.originalImage)!;
 
     const String chain = 'Filters';
-    String id(String name) => 'Image [$filename] with width = ${image.width}, height = ${image.height} $name applied in';
+    String id(String name) => '[$filename|${image.width}x${image.height}] => $name consumed ';
 
     if (resizeOn) {
-      measure('resize', chain: chain, () {
+      measure(id('resize'), chain: chain, () {
         final int largeSize = max(image.width, image.height);
         if (largeSize >= maxImageSize) {
           final int smallSize = min(image.width, image.height);
@@ -161,54 +189,54 @@ class EdgesBloc extends Cubit<EdgesState> {
           image = image.resize(isPortrait ? newSmallSize : newLargeSize, isPortrait ? newLargeSize : newSmallSize);
         }
       });
-    }
 
-    await sleep(50);
+      await sleep(25);
+    }
 
     final double aspectRatio = image.width / image.height;
     if (aspectRatio > 1) {
-      measure('rotation', chain: chain, () {
+      measure(id('rotation'), chain: chain, () {
         image = copyRotate(image, angle: 90);
       });
-    }
 
-    await sleep(50);
+      await sleep(25);
+    }
 
     if (grayScaleOn) {
       measure(id('grayscale filter'), chain: chain, () {
         image = grayscale(image, amount: grayscaleAmount);
       });
-    }
 
-    await sleep(50);
+      await sleep(25);
+    }
 
     if (blurOn) {
       measure(id('blur filter'), chain: chain, () {
         image = gaussianBlur(image, radius: blurRadius);
       });
-    }
 
-    await sleep(50);
+      await sleep(25);
+    }
 
     if (sobelOn) {
       measure(id('sobel filter'), chain: chain, () {
         image = sobel(image, amount: sobelAmount);
       });
-    }
 
-    await sleep(50);
+      await sleep(25);
+    }
 
     if (bwOn) {
       measure(id('black and white filter'), chain: chain, () {
         image = image.toBlackWhite(blackWhiteThreshold);
       });
-    }
 
-    await sleep(50);
+      await sleep(25);
+    }
 
     Edges? edges;
 
-    await measure('finding edges', chain: chain, () async {
+    await measure(id('finding edges'), chain: chain, () async {
       edges = await _edgeVision.findImageEdges(
         image: image,
         settings: state.settings,
@@ -217,28 +245,44 @@ class EdgesBloc extends Cubit<EdgesState> {
       );
     });
 
-    measure('Applied', chain: chain, abortChain: true, () {});
+    await sleep(25);
+
+    measure(id('Total'), chain: chain, abortChain: true, () {});
 
     _updateFilteredImage(
       filename,
       (ImageResult value) => value.copyWith(
         processedImage: encodeJpg(image),
         edges: edges,
+        processedImageHeight: image.height,
+        processedImageWidth: image.width,
       ),
     );
   }
 
   void _updateFilteredImage(String filename, ValueChanger<ImageResult> emitter) {
-    final ImageResult? oldFilteredImage = state.images[filename];
-    if (oldFilteredImage == null) {
+    final ImageResult? oldImageResult = state.images[filename];
+
+    if (oldImageResult == null) {
       return;
     }
+
+    final ImageResult imageResult = emitter(oldImageResult);
+    final List<ImageResult> imagesList = [...state.imagesList];
+
+    final int index = imagesList.indexWhere((ImageResult element) => element.name == filename);
+
+    if (index >= 0) {
+      imagesList[index] = imageResult;
+    }
+
     emit(
       state.copyWith(
         images: {
           ...state.images,
-          filename: emitter(oldFilteredImage),
+          filename: imageResult,
         },
+        imagesList: imagesList,
       ),
     );
   }

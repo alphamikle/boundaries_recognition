@@ -9,9 +9,12 @@ part of 'edges_state.dart';
 extension _$EdgesStateAutoequal on EdgesState {
   List<Object?> get _$props => [
         images,
-        settings,
+        imagesList,
+        lightSettings,
+        darkSettings,
         maxImageSize,
         threads,
+        darkSettingsOn,
         grayScaleOn,
         blurOn,
         resizeOn,
@@ -19,6 +22,8 @@ extension _$EdgesStateAutoequal on EdgesState {
         bwOn,
         dotsCloudOn,
         painterOn,
+        processing,
+        opacity,
       ];
 }
 
@@ -29,11 +34,17 @@ extension _$EdgesStateAutoequal on EdgesState {
 abstract class _$EdgesStateCWProxy {
   EdgesState images(Map<String, ImageResult> images);
 
-  EdgesState settings(Settings settings);
+  EdgesState imagesList(List<ImageResult> imagesList);
+
+  EdgesState lightSettings(Settings lightSettings);
+
+  EdgesState darkSettings(Settings darkSettings);
 
   EdgesState maxImageSize(int maxImageSize);
 
   EdgesState threads(int threads);
+
+  EdgesState darkSettingsOn(bool darkSettingsOn);
 
   EdgesState grayScaleOn(bool grayScaleOn);
 
@@ -49,6 +60,10 @@ abstract class _$EdgesStateCWProxy {
 
   EdgesState painterOn(bool painterOn);
 
+  EdgesState processing(bool processing);
+
+  EdgesState opacity(double opacity);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `EdgesState(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -57,9 +72,12 @@ abstract class _$EdgesStateCWProxy {
   /// ````
   EdgesState call({
     Map<String, ImageResult>? images,
-    Settings? settings,
+    List<ImageResult>? imagesList,
+    Settings? lightSettings,
+    Settings? darkSettings,
     int? maxImageSize,
     int? threads,
+    bool? darkSettingsOn,
     bool? grayScaleOn,
     bool? blurOn,
     bool? resizeOn,
@@ -67,6 +85,8 @@ abstract class _$EdgesStateCWProxy {
     bool? bwOn,
     bool? dotsCloudOn,
     bool? painterOn,
+    bool? processing,
+    double? opacity,
   });
 }
 
@@ -80,13 +100,26 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
   EdgesState images(Map<String, ImageResult> images) => this(images: images);
 
   @override
-  EdgesState settings(Settings settings) => this(settings: settings);
+  EdgesState imagesList(List<ImageResult> imagesList) =>
+      this(imagesList: imagesList);
+
+  @override
+  EdgesState lightSettings(Settings lightSettings) =>
+      this(lightSettings: lightSettings);
+
+  @override
+  EdgesState darkSettings(Settings darkSettings) =>
+      this(darkSettings: darkSettings);
 
   @override
   EdgesState maxImageSize(int maxImageSize) => this(maxImageSize: maxImageSize);
 
   @override
   EdgesState threads(int threads) => this(threads: threads);
+
+  @override
+  EdgesState darkSettingsOn(bool darkSettingsOn) =>
+      this(darkSettingsOn: darkSettingsOn);
 
   @override
   EdgesState grayScaleOn(bool grayScaleOn) => this(grayScaleOn: grayScaleOn);
@@ -110,6 +143,12 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
   EdgesState painterOn(bool painterOn) => this(painterOn: painterOn);
 
   @override
+  EdgesState processing(bool processing) => this(processing: processing);
+
+  @override
+  EdgesState opacity(double opacity) => this(opacity: opacity);
+
+  @override
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `EdgesState(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
@@ -119,9 +158,12 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
   /// ````
   EdgesState call({
     Object? images = const $CopyWithPlaceholder(),
-    Object? settings = const $CopyWithPlaceholder(),
+    Object? imagesList = const $CopyWithPlaceholder(),
+    Object? lightSettings = const $CopyWithPlaceholder(),
+    Object? darkSettings = const $CopyWithPlaceholder(),
     Object? maxImageSize = const $CopyWithPlaceholder(),
     Object? threads = const $CopyWithPlaceholder(),
+    Object? darkSettingsOn = const $CopyWithPlaceholder(),
     Object? grayScaleOn = const $CopyWithPlaceholder(),
     Object? blurOn = const $CopyWithPlaceholder(),
     Object? resizeOn = const $CopyWithPlaceholder(),
@@ -129,16 +171,29 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
     Object? bwOn = const $CopyWithPlaceholder(),
     Object? dotsCloudOn = const $CopyWithPlaceholder(),
     Object? painterOn = const $CopyWithPlaceholder(),
+    Object? processing = const $CopyWithPlaceholder(),
+    Object? opacity = const $CopyWithPlaceholder(),
   }) {
     return EdgesState(
       images: images == const $CopyWithPlaceholder() || images == null
           ? _value.images
           // ignore: cast_nullable_to_non_nullable
           : images as Map<String, ImageResult>,
-      settings: settings == const $CopyWithPlaceholder() || settings == null
-          ? _value.settings
-          // ignore: cast_nullable_to_non_nullable
-          : settings as Settings,
+      imagesList:
+          imagesList == const $CopyWithPlaceholder() || imagesList == null
+              ? _value.imagesList
+              // ignore: cast_nullable_to_non_nullable
+              : imagesList as List<ImageResult>,
+      lightSettings:
+          lightSettings == const $CopyWithPlaceholder() || lightSettings == null
+              ? _value.lightSettings
+              // ignore: cast_nullable_to_non_nullable
+              : lightSettings as Settings,
+      darkSettings:
+          darkSettings == const $CopyWithPlaceholder() || darkSettings == null
+              ? _value.darkSettings
+              // ignore: cast_nullable_to_non_nullable
+              : darkSettings as Settings,
       maxImageSize:
           maxImageSize == const $CopyWithPlaceholder() || maxImageSize == null
               ? _value.maxImageSize
@@ -148,6 +203,11 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
           ? _value.threads
           // ignore: cast_nullable_to_non_nullable
           : threads as int,
+      darkSettingsOn: darkSettingsOn == const $CopyWithPlaceholder() ||
+              darkSettingsOn == null
+          ? _value.darkSettingsOn
+          // ignore: cast_nullable_to_non_nullable
+          : darkSettingsOn as bool,
       grayScaleOn:
           grayScaleOn == const $CopyWithPlaceholder() || grayScaleOn == null
               ? _value.grayScaleOn
@@ -178,6 +238,15 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
           ? _value.painterOn
           // ignore: cast_nullable_to_non_nullable
           : painterOn as bool,
+      processing:
+          processing == const $CopyWithPlaceholder() || processing == null
+              ? _value.processing
+              // ignore: cast_nullable_to_non_nullable
+              : processing as bool,
+      opacity: opacity == const $CopyWithPlaceholder() || opacity == null
+          ? _value.opacity
+          // ignore: cast_nullable_to_non_nullable
+          : opacity as double,
     );
   }
 }

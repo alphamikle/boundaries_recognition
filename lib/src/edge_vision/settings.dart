@@ -3,10 +3,32 @@ class Settings {
     this.searchMatrixSize = 3,
     this.minObjectSize = 40,
     this.distortionAngleThreshold = 5,
-    this.skewnessThreshold = 0.26,
-    this.blackWhiteThreshold = 150,
+    this.skewnessThreshold = 0.25,
+    this.blackWhiteThreshold = 160,
+    this.grayscaleAmount = 1.20,
+    this.sobelAmount = 1.20,
+    this.blurRadius = 2,
+  });
+
+  const Settings.light({
+    this.searchMatrixSize = 3,
+    this.minObjectSize = 40,
+    this.distortionAngleThreshold = 5,
+    this.skewnessThreshold = 0.25,
+    this.blackWhiteThreshold = 160,
     this.grayscaleAmount = 6.25,
-    this.sobelAmount = 1.25,
+    this.sobelAmount = 1.20,
+    this.blurRadius = 2,
+  });
+
+  const Settings.dark({
+    this.searchMatrixSize = 3,
+    this.minObjectSize = 40,
+    this.distortionAngleThreshold = 5,
+    this.skewnessThreshold = 0.25,
+    this.blackWhiteThreshold = 160,
+    this.grayscaleAmount = 1.20,
+    this.sobelAmount = 1.20,
     this.blurRadius = 2,
   });
 
@@ -73,5 +95,20 @@ class Settings {
       sobelAmount: sobelAmount ?? this.sobelAmount,
       blurRadius: blurRadius ?? this.blurRadius,
     );
+  }
+
+  @override
+  String toString() {
+    return '''
+Settings {
+  searchMatrixSize: $searchMatrixSize
+  minObjectSize: $minObjectSize
+  distortionAngleThreshold: $distortionAngleThreshold
+  skewnessThreshold: $skewnessThreshold
+  blackWhiteThreshold: $blackWhiteThreshold
+  grayscaleAmount: $grayscaleAmount
+  sobelAmount: $sobelAmount
+  blurRadius: $blurRadius
+}''';
   }
 }

@@ -1,19 +1,15 @@
 import 'dart:async';
-import 'dart:developer' as dev;
 import 'dart:math';
 
-import 'package:camera/camera.dart';
-import 'package:edge_vision/edge_vision.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image/image.dart' as i;
 
-import '../../../utils/bench.dart';
-import '../../../utils/camera_image_extensions.dart';
-import '../../../utils/throttle.dart';
+import '../../../utils/colors.dart';
 import '../../logic/bloc/edges_bloc.dart';
-import '../component/edges_painter.dart';
+import '../../logic/bloc/edges_state.dart';
+import '../../logic/model/image_result.dart';
+import '../component/image_frame.dart';
+import '../component/settings_fragment.dart';
 
 class EdgesSandboxView extends StatefulWidget {
   const EdgesSandboxView({
@@ -25,13 +21,17 @@ class EdgesSandboxView extends StatefulWidget {
 }
 
 class _EdgesSandboxViewState extends State<EdgesSandboxView> {
+  final GlobalKey<ScaffoldState> key = GlobalKey();
   late final EdgesBloc edgesBloc = context.read();
+  final int startIndex = 1;
+  final int endIndex = 32;
+
+  String get small => true ? '_small' : '';
 
   Future<void> init() async {
-    await edgesBloc.loadImage('i1_small');
-    await edgesBloc.loadImage('i2_small');
-    await edgesBloc.loadImage('i3_small');
-    await edgesBloc.loadImage('i4_small');
+    for (int i = startIndex; i <= endIndex; i++) {
+      await edgesBloc.loadImage('cards/small/300x400_$i');
+    }
   }
 
   // Future<void> handleImage(CameraImage cameraImage) async {
@@ -53,6 +53,29 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
   //   setState(() {});
   // }
 
+  void showNotification({required bool processing}) {
+    ScaffoldMessenger.of(key.currentContext!).showSnackBar(
+      SnackBar(
+        content: Text(processing ? 'Images processing started' : 'Images processing ended'),
+      ),
+    );
+  }
+
+  Future<void> startCamera() async {
+    // TODO(alphamikle):
+  }
+
+  Widget imageFrameBuilder(BuildContext context, int index) {
+    if (index >= edgesBloc.state.imagesList.length) {
+      return Container(
+        decoration: BoxDecoration(color: context.colors.primary),
+      );
+    }
+
+    final ImageResult result = edgesBloc.state.imagesList[index];
+    return ImageFrame(result: result);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -61,100 +84,77 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          /// @ Settings
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // TODO(alphamikle): Continue here
-                  Slider(
-                    value: settings.grayscaleAmount,
-                    onChanged: (double value) => applySettings(settings.copyWith(grayscaleAmount: value)),
-                    max: 10,
-                    divisions: 40,
-                    label: 'GA: ${settings.grayscaleAmount.toStringAsFixed(2)}',
-                  ),
-                  Slider(
-                    value: settings.sobelAmount,
-                    onChanged: (double value) => applySettings(settings.copyWith(sobelAmount: value)),
-                    max: 10,
-                    divisions: 40,
-                    label: 'SA: ${settings.sobelAmount.toStringAsFixed(2)}',
-                  ),
-                  Slider(
-                    value: settings.blackWhiteThreshold.toDouble(),
-                    onChanged: (double value) => applySettings(settings.copyWith(blackWhiteThreshold: value.toInt())),
-                    max: 255,
-                    divisions: 254,
-                    label: 'C-TH: ${settings.blackWhiteThreshold.toStringAsFixed(0)}',
-                  ),
-                  Slider(
-                    value: settings.searchMatrixSize.toDouble(),
-                    onChanged: (double value) => applySettings(settings.copyWith(searchMatrixSize: value.toInt())),
-                    min: 1,
-                    max: 25,
-                    divisions: 24,
-                    label: 'S-TH: ${settings.searchMatrixSize.toStringAsFixed(0)}',
-                  ),
-                  Slider(
-                    value: settings.minObjectSize.toDouble(),
-                    onChanged: (double value) => applySettings(settings.copyWith(minObjectSize: value.toInt())),
-                    min: 1,
-                    max: 100,
-                    divisions: 98,
-                    label: 'Size: ${settings.minObjectSize.toStringAsFixed(0)}',
-                  ),
-                  Slider(
-                    value: settings.distortionAngleThreshold.toDouble(),
-                    onChanged: (double value) => applySettings(settings.copyWith(distortionAngleThreshold: value)),
-                    max: 5,
-                    divisions: 25,
-                    label: 'Angle: ${settings.distortionAngleThreshold.toStringAsFixed(2)}',
-                  ),
-                  Slider(
-                    value: settings.skewnessThreshold.toDouble(),
-                    onChanged: (double value) => applySettings(settings.copyWith(skewnessThreshold: value)),
-                    max: 0.5,
-                    divisions: 25,
-                    label: 'P-TH: ${settings.skewnessThreshold.toStringAsFixed(2)}',
-                  ),
-                ],
+    return BlocListener<EdgesBloc, EdgesState>(
+      listenWhen: (EdgesState p, EdgesState c) => c.processing != p.processing,
+      listener: (BuildContext context, EdgesState state) => showNotification(processing: state.processing),
+      child: Scaffold(
+        key: key,
+        endDrawer: Drawer(
+          width: max(500, context.query.size.width * (1 / 3)),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8, top: 8, right: 8, bottom: 8),
+            child: SettingsFragment(),
+          ),
+        ),
+        body: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.only(left: 8, top: context.query.padding.top + 8, right: 8, bottom: context.query.padding.bottom + 8),
+              sliver: BlocBuilder<EdgesBloc, EdgesState>(
+                buildWhen: (EdgesState p, EdgesState c) => c.images != p.images || c.opacity != p.opacity,
+                builder: (BuildContext context, EdgesState state) {
+                  return SliverGrid.builder(
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      childAspectRatio: 3 / 4,
+                      maxCrossAxisExtent: 200,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                    ),
+                    itemBuilder: imageFrameBuilder,
+                    itemCount: state.imagesList.length + 1,
+                  );
+                },
               ),
             ),
-          ),
-
-          /// @ Buttons
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton(
-                  onPressed: toggleFilters,
-                  child: Text(
-                    showFilters ? 'Filters ✅️' : 'Filters ⬜️',
-                  ),
-                ),
-                TextButton(
-                  onPressed: togglePainter,
-                  child: Text(
-                    showPainter ? 'Paint ✅️' : 'Paint ⬜️',
-                  ),
-                ),
-                TextButton(
-                  onPressed: toggleCorners,
-                  child: Text(
-                    onlyCorners ? 'Corners ✅️' : 'Corners ⬜️',
-                  ),
-                ),
-              ],
+          ],
+        ),
+        // body: SafeArea(
+        //   child: Row(
+        //     children: [
+        //       const SizedBox(width: 16),
+        //       Flexible(
+        //         child: BlocBuilder<EdgesBloc, EdgesState>(
+        //           buildWhen: (EdgesState p, EdgesState c) => c.images != p.images,
+        //           builder: (BuildContext context, EdgesState state) {
+        //             return ListView.builder(
+        //               itemBuilder: imageFrameBuilder,
+        //               itemCount: state.images.length,
+        //             );
+        //           },
+        //         ),
+        //       ),
+        //       const SizedBox(width: 16),
+        //       const Expanded(
+        //         child: SettingsFragment(),
+        //       ),
+        //       const SizedBox(width: 16),
+        //     ],
+        //   ),
+        // ),
+        floatingActionButton: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FloatingActionButton.small(
+              onPressed: key.currentState?.openEndDrawer,
+              child: Icon(Icons.menu_open_rounded),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            FloatingActionButton.small(
+              onPressed: startCamera,
+              child: Icon(Icons.camera_alt),
+            ),
+          ],
+        ),
       ),
     );
   }

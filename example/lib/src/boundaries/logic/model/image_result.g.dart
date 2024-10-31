@@ -8,6 +8,7 @@ part of 'image_result.dart';
 
 extension _$ImageResultAutoequal on ImageResult {
   List<Object?> get _$props => [
+        name,
         originalImage,
         processedImage,
         edges,
@@ -21,6 +22,8 @@ extension _$ImageResultAutoequal on ImageResult {
 // **************************************************************************
 
 abstract class _$ImageResultCWProxy {
+  ImageResult name(String name);
+
   ImageResult originalImage(Uint8List originalImage);
 
   ImageResult processedImage(Uint8List? processedImage);
@@ -38,6 +41,7 @@ abstract class _$ImageResultCWProxy {
   /// ImageResult(...).copyWith(id: 12, name: "My name")
   /// ````
   ImageResult call({
+    String? name,
     Uint8List? originalImage,
     Uint8List? processedImage,
     Edges? edges,
@@ -51,6 +55,9 @@ class _$ImageResultCWProxyImpl implements _$ImageResultCWProxy {
   const _$ImageResultCWProxyImpl(this._value);
 
   final ImageResult _value;
+
+  @override
+  ImageResult name(String name) => this(name: name);
 
   @override
   ImageResult originalImage(Uint8List originalImage) =>
@@ -80,6 +87,7 @@ class _$ImageResultCWProxyImpl implements _$ImageResultCWProxy {
   /// ImageResult(...).copyWith(id: 12, name: "My name")
   /// ````
   ImageResult call({
+    Object? name = const $CopyWithPlaceholder(),
     Object? originalImage = const $CopyWithPlaceholder(),
     Object? processedImage = const $CopyWithPlaceholder(),
     Object? edges = const $CopyWithPlaceholder(),
@@ -87,6 +95,10 @@ class _$ImageResultCWProxyImpl implements _$ImageResultCWProxy {
     Object? processedImageHeight = const $CopyWithPlaceholder(),
   }) {
     return ImageResult(
+      name: name == const $CopyWithPlaceholder() || name == null
+          ? _value.name
+          // ignore: cast_nullable_to_non_nullable
+          : name as String,
       originalImage:
           originalImage == const $CopyWithPlaceholder() || originalImage == null
               ? _value.originalImage

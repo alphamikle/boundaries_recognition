@@ -11,6 +11,7 @@ part 'image_result.g.dart';
 @CopyWith()
 class ImageResult extends Equatable {
   const ImageResult({
+    required this.name,
     required this.originalImage,
     required this.processedImage,
     required this.edges,
@@ -18,11 +19,13 @@ class ImageResult extends Equatable {
     required this.processedImageHeight,
   });
 
-  const ImageResult.fromOriginalImage(this.originalImage)
+  const ImageResult.fromOriginalImage(this.name, this.originalImage)
       : processedImage = null,
         processedImageWidth = null,
         processedImageHeight = null,
         edges = null;
+
+  final String name;
 
   final Uint8List originalImage;
 
