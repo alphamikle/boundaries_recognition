@@ -13,7 +13,8 @@ void start(String id) => _benchKeys[id] = DateTime.now().microsecondsSinceEpoch;
 
 double stop(
   String id, {
-  bool clear = false,
+  bool clear = true,
+  bool silent = false,
 }) {
   final int? start = _benchKeys[id];
   if (start == null) {
@@ -23,7 +24,9 @@ double stop(
   final int now = DateTime.now().microsecondsSinceEpoch;
   final double diff = (now - start) / 1000;
 
-  log('$id: ${diff}ms', name: 'BENCH');
+  if (silent == false) {
+    log('$id: ${diff}ms', name: 'BENCH');
+  }
 
   if (clear) {
     _benchKeys.remove(id);

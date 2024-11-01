@@ -10,6 +10,7 @@ extension _$EdgesStateAutoequal on EdgesState {
   List<Object?> get _$props => [
         images,
         imagesList,
+        testImages,
         lightSettings,
         darkSettings,
         maxImageSize,
@@ -35,6 +36,8 @@ abstract class _$EdgesStateCWProxy {
   EdgesState images(Map<String, ImageResult> images);
 
   EdgesState imagesList(List<ImageResult> imagesList);
+
+  EdgesState testImages(Map<String, TestImage> testImages);
 
   EdgesState lightSettings(Settings lightSettings);
 
@@ -73,6 +76,7 @@ abstract class _$EdgesStateCWProxy {
   EdgesState call({
     Map<String, ImageResult>? images,
     List<ImageResult>? imagesList,
+    Map<String, TestImage>? testImages,
     Settings? lightSettings,
     Settings? darkSettings,
     int? maxImageSize,
@@ -102,6 +106,10 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
   @override
   EdgesState imagesList(List<ImageResult> imagesList) =>
       this(imagesList: imagesList);
+
+  @override
+  EdgesState testImages(Map<String, TestImage> testImages) =>
+      this(testImages: testImages);
 
   @override
   EdgesState lightSettings(Settings lightSettings) =>
@@ -159,6 +167,7 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
   EdgesState call({
     Object? images = const $CopyWithPlaceholder(),
     Object? imagesList = const $CopyWithPlaceholder(),
+    Object? testImages = const $CopyWithPlaceholder(),
     Object? lightSettings = const $CopyWithPlaceholder(),
     Object? darkSettings = const $CopyWithPlaceholder(),
     Object? maxImageSize = const $CopyWithPlaceholder(),
@@ -184,6 +193,11 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
               ? _value.imagesList
               // ignore: cast_nullable_to_non_nullable
               : imagesList as List<ImageResult>,
+      testImages:
+          testImages == const $CopyWithPlaceholder() || testImages == null
+              ? _value.testImages
+              // ignore: cast_nullable_to_non_nullable
+              : testImages as Map<String, TestImage>,
       lightSettings:
           lightSettings == const $CopyWithPlaceholder() || lightSettings == null
               ? _value.lightSettings

@@ -28,11 +28,7 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
 
   String get small => true ? '_small' : '';
 
-  Future<void> init() async {
-    for (int i = startIndex; i <= endIndex; i++) {
-      await edgesBloc.loadImage('cards/small/300x400_$i');
-    }
-  }
+  Future<void> init() async => edgesBloc.loadImages();
 
   // Future<void> handleImage(CameraImage cameraImage) async {
   //   await Throttle.run(
@@ -99,14 +95,41 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
         body: CustomScrollView(
           slivers: [
             SliverPadding(
-              padding: EdgeInsets.only(left: 8, top: context.query.padding.top + 8, right: 8, bottom: context.query.padding.bottom + 8),
+              padding: EdgeInsets.only(left: 8, top: context.query.padding.top + 8, right: 8, bottom: 8),
+              sliver: BlocBuilder<EdgesBloc, EdgesState>(
+                builder: (BuildContext context, EdgesState state) {
+                  final Map<String, String> success = state.success;
+
+                  return SliverToBoxAdapter(
+                    child: Wrap(
+                      runSpacing: 8,
+                      spacing: 8,
+                      children: [
+                        for (final MapEntry(:key, :value) in success.entries)
+                          Chip(
+                            label: Text(
+                              '$key: $value',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.only(left: 8, right: 8, bottom: context.query.padding.bottom + 8),
               sliver: BlocBuilder<EdgesBloc, EdgesState>(
                 buildWhen: (EdgesState p, EdgesState c) => c.images != p.images || c.opacity != p.opacity,
                 builder: (BuildContext context, EdgesState state) {
                   return SliverGrid.builder(
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                       childAspectRatio: 3 / 4,
-                      maxCrossAxisExtent: 200,
+                      maxCrossAxisExtent: 300,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
                     ),
@@ -118,29 +141,6 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
             ),
           ],
         ),
-        // body: SafeArea(
-        //   child: Row(
-        //     children: [
-        //       const SizedBox(width: 16),
-        //       Flexible(
-        //         child: BlocBuilder<EdgesBloc, EdgesState>(
-        //           buildWhen: (EdgesState p, EdgesState c) => c.images != p.images,
-        //           builder: (BuildContext context, EdgesState state) {
-        //             return ListView.builder(
-        //               itemBuilder: imageFrameBuilder,
-        //               itemCount: state.images.length,
-        //             );
-        //           },
-        //         ),
-        //       ),
-        //       const SizedBox(width: 16),
-        //       const Expanded(
-        //         child: SettingsFragment(),
-        //       ),
-        //       const SizedBox(width: 16),
-        //     ],
-        //   ),
-        // ),
         floatingActionButton: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

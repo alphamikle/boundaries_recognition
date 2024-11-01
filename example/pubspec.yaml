@@ -33,4 +33,4 @@ flutter:
   assets:
     - assets/
     - assets/cards/
-    - assets/cards/small/
+    - assets/cards/300x400/
