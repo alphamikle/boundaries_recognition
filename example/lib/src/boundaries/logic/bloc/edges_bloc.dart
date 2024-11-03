@@ -9,23 +9,13 @@ import 'package:flutter/services.dart';
 import 'package:image/image.dart';
 
 import '../../../utils/bench.dart';
+import '../../../utils/dataset.dart';
 import '../../../utils/debouncer.dart';
-import '../../../utils/images.dart';
+import '../../../utils/sleep.dart';
 import '../../../utils/types.dart';
 import '../model/image_result.dart';
 import '../model/test_image.dart';
 import 'edges_state.dart';
-
-/*
-Pretty good results without isles
-GA: 1.00 / 1.25 for light background and 6.25 for dark
-SA: 1.25
-C-TH: 150
-S-TH: 3
-Size: 40
-Angle: 5.00
-P-TH: 0.26
- */
 
 class EdgesBloc extends Cubit<EdgesState> {
   EdgesBloc({
@@ -38,9 +28,7 @@ class EdgesBloc extends Cubit<EdgesState> {
 
   CameraController? get cameraController => _cameraController;
 
-  Future<void> pickImage() async {
-    // TODO(alphamikle):
-  }
+  Future<void> pickImage() async => throw UnimplementedError();
 
   Future<void> togglePainter() async {
     emit(state.copyWith(painterOn: !state.painterOn));
@@ -109,8 +97,8 @@ class EdgesBloc extends Cubit<EdgesState> {
   Future<void> loadImages() async {
     final RegExp imageRegExp = RegExp(r'(?<size>\d+x\d+)/(?<card>[a-z]+)_(?<background>[a-z]+)_(?<index>\d+)\.jpg$');
 
-    final int size = false ? 16 : images.length;
-    final List<String> firstNthImages = images.getRange(0, size).toList();
+    final int size = 1 == 1 ? 16 : dataset.length;
+    final List<String> firstNthImages = dataset.getRange(0, size).toList();
 
     int i = 0;
     final int total = firstNthImages.length;
@@ -148,6 +136,8 @@ class EdgesBloc extends Cubit<EdgesState> {
       cpuTime.add(result);
 
       dev.log('Processed: $i / $total image in ${result}ms');
+
+      await sleep(10);
     }
 
     final double sum = cpuTime.fold(0, (double sum, double it) => sum + it);
@@ -220,12 +210,7 @@ class EdgesBloc extends Cubit<EdgesState> {
 
     Image image = decodeJpg(imageResult.originalImage)!;
 
-    // const String chain = 'Filters';
-    // String id(String name) => '[$filename|${image.width}x${image.height}] => $name consumed ';
-
     if (resizeOn) {
-      // measure(id('resize'), chain: chain, () {
-      // });
       final int largeSize = max(image.width, image.height);
       if (largeSize >= maxImageSize) {
         final int smallSize = min(image.width, image.height);
@@ -242,47 +227,32 @@ class EdgesBloc extends Cubit<EdgesState> {
 
     final double aspectRatio = image.width / image.height;
     if (aspectRatio > 1) {
-      // measure(id('rotation'), chain: chain, () {
-      // });
       image = copyRotate(image, angle: 90);
     }
 
     if (grayScaleOn) {
-      // measure(id('grayscale filter'), chain: chain, () {
-      // });
       image = grayscale(image, amount: grayscaleAmount);
     }
 
     if (blurOn) {
-      // measure(id('blur filter'), chain: chain, () {
-      // });
       image = gaussianBlur(image, radius: blurRadius);
     }
 
     if (sobelOn) {
-      // measure(id('sobel filter'), chain: chain, () {
-      // });
       image = sobel(image, amount: sobelAmount);
     }
 
     if (bwOn) {
-      // measure(id('black and white filter'), chain: chain, () {
-      // });
       image = image.toBlackWhite(blackWhiteThreshold);
     }
 
     Edges? edges;
 
-    // await measure(id('finding edges'), chain: chain, () async {
-    // });
-    edges = await _edgeVision.findImageEdges(
+    edges = _edgeVision.findImageEdges(
       image: image,
       settings: state.settings,
-      threads: state.threads,
       preparedImage: true,
     );
-
-    // measure(id('Total'), chain: chain, abortChain: true, () {});
 
     _updateFilteredImage(
       filename,

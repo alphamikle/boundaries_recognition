@@ -1,57 +1,8 @@
-import 'package:camera/camera.dart';
-import 'package:flutter/services.dart';
 import 'package:image/image.dart' as i;
 
 import 'pixel_extensions.dart';
 
 extension ExtendedImage on i.Image {
-  i.Image rotateWithOrientation(DeviceOrientation orientation) {
-    switch (orientation) {
-      case DeviceOrientation.portraitUp:
-        return this;
-      case DeviceOrientation.landscapeLeft:
-        return i.copyRotate(this, angle: 90);
-      case DeviceOrientation.portraitDown:
-        return i.copyRotate(this, angle: 180);
-      case DeviceOrientation.landscapeRight:
-        return i.copyRotate(this, angle: -90);
-    }
-  }
-
-  i.Image rotateWithController(CameraController controller) {
-    final int angle = _calculateRotationAngle(controller);
-    return i.copyRotate(this, angle: angle);
-  }
-
-  int _calculateRotationAngle(CameraController controller) {
-    final DeviceOrientation deviceOrientation = controller.value.deviceOrientation;
-    final int sensorOrientation = controller.description.sensorOrientation;
-
-    int rotationAngle;
-    switch (deviceOrientation) {
-      case DeviceOrientation.portraitUp:
-        rotationAngle = sensorOrientation;
-        break;
-      case DeviceOrientation.landscapeLeft:
-        rotationAngle = (sensorOrientation - 90) % 360;
-        break;
-      case DeviceOrientation.portraitDown:
-        rotationAngle = (sensorOrientation - 180) % 360;
-        break;
-      case DeviceOrientation.landscapeRight:
-        rotationAngle = (sensorOrientation - 270) % 360;
-        break;
-      default:
-        rotationAngle = 0;
-    }
-
-    if (rotationAngle < 0) {
-      rotationAngle += 360;
-    }
-
-    return rotationAngle;
-  }
-
   // TODO(alphamikle): May be buggy
   /// Image converter to black and white only pixels
   i.Image toBlackWhite(int threshold) {
@@ -141,5 +92,45 @@ extension ExtendedImage on i.Image {
     }
 
     return results;
+  }
+
+  List<i.Image> splitImageHorizontally(int piecesAmount) {
+    if (piecesAmount < 1) {
+      throw ArgumentError('piecesAmount > 1');
+    }
+
+    final int pieceHeight = (height / piecesAmount).floor();
+    final List<i.Image> imagePieces = [];
+
+    int y = 0;
+
+    for (int index = 0; index < piecesAmount; index++) {
+      final int currentPieceHeight = (index == piecesAmount - 1) ? height - y : pieceHeight;
+      final i.Image imagePiece = i.copyCrop(this, x: 0, y: y, width: width, height: currentPieceHeight);
+      imagePieces.add(imagePiece);
+      y += currentPieceHeight;
+    }
+    return imagePieces;
+  }
+}
+
+extension ExtendedImagesList on List<i.Image> {
+  i.Image combine() {
+    if (isEmpty) {
+      throw ArgumentError('List<Image> should not be empty');
+    }
+
+    final int width = first.width;
+    final int height = fold(0, (int sum, i.Image image) => sum + image.height);
+
+    i.Image combinedImage = i.Image(width: width, height: height);
+
+    int yOffset = 0;
+
+    for (final i.Image image in this) {
+      combinedImage = i.compositeImage(combinedImage, image, dstX: 0, dstY: yOffset);
+      yOffset += image.height;
+    }
+    return combinedImage;
   }
 }

@@ -15,8 +15,7 @@ class EdgesState extends Equatable {
     required this.images,
     required this.imagesList,
     required this.testImages,
-    required this.lightSettings,
-    required this.darkSettings,
+    required this.settings,
     required this.maxImageSize,
     required this.threads,
     required this.darkSettingsOn,
@@ -35,8 +34,7 @@ class EdgesState extends Equatable {
         images: {},
         imagesList: [],
         testImages: {},
-        lightSettings: Settings.light(),
-        darkSettings: Settings.dark(),
+        settings: [],
         maxImageSize: 400,
         threads: 1,
         darkSettingsOn: false,
@@ -57,9 +55,7 @@ class EdgesState extends Equatable {
 
   final Map<String, TestImage> testImages;
 
-  final Settings lightSettings;
-
-  final Settings darkSettings;
+  final List<Settings> settings;
 
   final int maxImageSize;
 
@@ -84,8 +80,6 @@ class EdgesState extends Equatable {
   final bool processing;
 
   final double opacity;
-
-  Settings get settings => darkSettingsOn ? darkSettings : lightSettings;
 
   Map<String, String> get success {
     final Map<String, String> results = {

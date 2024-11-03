@@ -50,7 +50,7 @@ forbidden_strings=(
 )
 
 # Start generating the Dart code
-echo "const List<String> images = [" > "$output_file"
+echo "const List<String> dataset = [" > "$output_file"
 
 # Find all files recursively in the specified directory
 find "$directory" -type f | while read -r file; do

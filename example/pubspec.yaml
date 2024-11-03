@@ -17,12 +17,14 @@ dependencies:
   autoequal: ^0.9.1
   equatable: ^2.0.5
   copy_with_extension: ^5.0.4
+  path: ^1.9.0
   edge_vision:
     path: ../
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  test: ^1.25.8
   flutter_lints: ^5.0.0
   build_runner: ^2.4.13
   autoequal_gen: ^0.9.1

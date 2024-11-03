@@ -5,12 +5,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'src/boundaries/logic/bloc/edges_bloc.dart';
 import 'src/boundaries/ui/view/edges_sandbox_view.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  final EdgeVision edgeVision = EdgeVision();
+  runApp(
+    MyApp(
+      edgeVision: edgeVision,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    required this.edgeVision,
+    super.key,
+  });
+
+  final EdgeVision edgeVision;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +34,7 @@ class MyApp extends StatelessWidget {
         providers: [
           BlocProvider(
             create: (BuildContext context) => EdgesBloc(
-              edgeVision: const EdgeVision(),
+              edgeVision: edgeVision,
             ),
           ),
         ],

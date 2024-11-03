@@ -1,36 +1,24 @@
 class Settings {
   const Settings({
-    this.searchMatrixSize = 3,
-    this.minObjectSize = 40,
-    this.distortionAngleThreshold = 5,
-    this.skewnessThreshold = 0.25,
-    this.blackWhiteThreshold = 160,
-    this.grayscaleAmount = 1.20,
-    this.sobelAmount = 1.20,
-    this.blurRadius = 2,
+    required this.searchMatrixSize,
+    required this.minObjectSize,
+    required this.distortionAngleThreshold,
+    required this.skewnessThreshold,
+    required this.blackWhiteThreshold,
+    required this.grayscaleAmount,
+    required this.sobelAmount,
+    required this.blurRadius,
   });
 
-  const Settings.light({
-    this.searchMatrixSize = 3,
-    this.minObjectSize = 40,
-    this.distortionAngleThreshold = 5,
-    this.skewnessThreshold = 0.25,
-    this.blackWhiteThreshold = 160,
-    this.grayscaleAmount = 6.25,
-    this.sobelAmount = 1.20,
-    this.blurRadius = 2,
-  });
-
-  const Settings.dark({
-    this.searchMatrixSize = 3,
-    this.minObjectSize = 40,
-    this.distortionAngleThreshold = 5,
-    this.skewnessThreshold = 0.25,
-    this.blackWhiteThreshold = 160,
-    this.grayscaleAmount = 1.20,
-    this.sobelAmount = 1.20,
-    this.blurRadius = 2,
-  });
+  const Settings.zero()
+      : searchMatrixSize = 0,
+        minObjectSize = 0,
+        distortionAngleThreshold = 0,
+        skewnessThreshold = 0,
+        blackWhiteThreshold = 0,
+        grayscaleAmount = 0,
+        sobelAmount = 0,
+        blurRadius = 0;
 
   /// Search matrix size - neighboring pixels to be searched relative to the current pixel
   final int searchMatrixSize;
@@ -49,6 +37,28 @@ class Settings {
   final double sobelAmount;
 
   final int blurRadius;
+
+  Settings operator +(Settings other) => Settings(
+        searchMatrixSize: searchMatrixSize + other.searchMatrixSize,
+        minObjectSize: minObjectSize + other.minObjectSize,
+        distortionAngleThreshold: distortionAngleThreshold + other.distortionAngleThreshold,
+        skewnessThreshold: skewnessThreshold + other.skewnessThreshold,
+        blackWhiteThreshold: blackWhiteThreshold + other.blackWhiteThreshold,
+        grayscaleAmount: grayscaleAmount + other.grayscaleAmount,
+        sobelAmount: sobelAmount + other.sobelAmount,
+        blurRadius: blurRadius + other.blurRadius,
+      );
+
+  Settings operator /(num delimiter) => Settings(
+        searchMatrixSize: searchMatrixSize ~/ delimiter,
+        minObjectSize: minObjectSize ~/ delimiter,
+        distortionAngleThreshold: distortionAngleThreshold / delimiter,
+        skewnessThreshold: skewnessThreshold / delimiter,
+        blackWhiteThreshold: blackWhiteThreshold ~/ delimiter,
+        grayscaleAmount: grayscaleAmount / delimiter,
+        sobelAmount: sobelAmount / delimiter,
+        blurRadius: blurRadius ~/ delimiter,
+      );
 
   @override
   bool operator ==(Object other) =>
