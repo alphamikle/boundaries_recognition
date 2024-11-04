@@ -4,6 +4,7 @@ import 'package:autoequal/autoequal.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:edge_vision/edge_vision.dart';
 import 'package:equatable/equatable.dart';
+import 'package:image/image.dart';
 
 part 'image_result.g.dart';
 
@@ -13,14 +14,18 @@ class ImageResult extends Equatable {
   const ImageResult({
     required this.name,
     required this.originalImage,
+    required this.decodedImage,
     required this.processedImage,
     required this.edges,
     required this.processedImageWidth,
     required this.processedImageHeight,
   });
 
-  const ImageResult.fromOriginalImage(this.name, this.originalImage)
-      : processedImage = null,
+  const ImageResult.fromOriginalImage({
+    required this.name,
+    required this.originalImage,
+    required this.decodedImage,
+  })  : processedImage = null,
         processedImageWidth = null,
         processedImageHeight = null,
         edges = null;
@@ -28,6 +33,8 @@ class ImageResult extends Equatable {
   final String name;
 
   final Uint8List originalImage;
+
+  final Image decodedImage;
 
   final Uint8List? processedImage;
 

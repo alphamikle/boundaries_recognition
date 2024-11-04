@@ -22,10 +22,17 @@ double angle(Point<num> start, Point<num> intersection, Point<num> end) {
 /// Calculates distance between two points
 double distance(Point<num> p1, Point<num> p2) => sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
 
-/// Calculates the percentage difference between the lengths of two lines
-double distanceDifference(double d1, double d2) {
-  final double maxDistance = max(d1, d2);
-  final double minDistance = min(d1, d2);
+/// Calculates the percentage difference between two numbers
+double percentageDifference(double d1, double d2) {
+  final double maxNumber = max(d1, d2);
+  final double minNumber = min(d1, d2);
 
-  return (maxDistance - minDistance) / maxDistance;
+  return (maxNumber - minNumber) / maxNumber;
+}
+
+/// Calculates square of some area. Mostly - area of the recognized object
+int square(Point<num> p1, Point<num> p2, Point<num> p3, Point<num> p4) {
+  final num sum1 = p1.x * p2.y + p2.x * p3.y + p3.x * p4.y + p4.x * p1.y;
+  final num sum2 = p1.y * p2.x + p2.y * p3.x + p3.y * p4.x + p4.y * p1.x;
+  return (sum1 - sum2).abs() ~/ 2;
 }

@@ -28,7 +28,10 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
 
   String get small => true ? '_small' : '';
 
-  Future<void> init() async => edgesBloc.loadImages();
+  Future<void> init() async {
+    await edgesBloc.loadImages();
+    setState(() {});
+  }
 
   // Future<void> handleImage(CameraImage cameraImage) async {
   //   await Throttle.run(
@@ -49,14 +52,6 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
   //   setState(() {});
   // }
 
-  void showNotification({required bool processing}) {
-    ScaffoldMessenger.of(key.currentContext!).showSnackBar(
-      SnackBar(
-        content: Text(processing ? 'Images processing started' : 'Images processing ended'),
-      ),
-    );
-  }
-
   Future<void> startCamera() async {
     // TODO(alphamikle):
   }
@@ -68,8 +63,14 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
       );
     }
 
-    final ImageResult result = edgesBloc.state.imagesList[index];
-    return ImageFrame(result: result);
+    final EdgesState state = edgesBloc.state;
+    final ImageResult result = state.imagesList[index];
+    final bool selected = state.selectedImages.isEmpty || state.selectedImages.contains(result.name);
+
+    return ImageFrame(
+      result: result,
+      selected: selected,
+    );
   }
 
   @override
@@ -80,81 +81,82 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<EdgesBloc, EdgesState>(
-      listenWhen: (EdgesState p, EdgesState c) => c.processing != p.processing,
-      listener: (BuildContext context, EdgesState state) => showNotification(processing: state.processing),
-      child: Scaffold(
-        key: key,
-        endDrawer: Drawer(
-          width: max(500, context.query.size.width * (1 / 3)),
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8, top: 8, right: 8, bottom: 8),
-            child: SettingsFragment(),
-          ),
+    return Scaffold(
+      key: key,
+      endDrawer: Drawer(
+        width: max(500, context.query.size.width * (1 / 3)),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 8, top: 8, right: 8, bottom: 8),
+          child: SettingsFragment(),
         ),
-        body: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: EdgeInsets.only(left: 8, top: context.query.padding.top + 8, right: 8, bottom: 8),
-              sliver: BlocBuilder<EdgesBloc, EdgesState>(
-                builder: (BuildContext context, EdgesState state) {
-                  final Map<String, String> success = state.success;
+      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.only(left: 8, top: context.query.padding.top + 8, right: 8, bottom: 8),
+            sliver: BlocBuilder<EdgesBloc, EdgesState>(
+              builder: (BuildContext context, EdgesState state) {
+                final Map<String, String> success = state.success;
 
-                  return SliverToBoxAdapter(
-                    child: Wrap(
-                      runSpacing: 8,
-                      spacing: 8,
-                      children: [
-                        for (final MapEntry(:key, :value) in success.entries)
-                          Chip(
-                            label: Text(
-                              '$key: $value',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                return SliverToBoxAdapter(
+                  child: Wrap(
+                    runSpacing: 8,
+                    spacing: 8,
+                    children: [
+                      for (final MapEntry(:key, :value) in success.entries)
+                        Chip(
+                          label: Text(
+                            '$key: $value',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
-            SliverPadding(
-              padding: EdgeInsets.only(left: 8, right: 8, bottom: context.query.padding.bottom + 8),
-              sliver: BlocBuilder<EdgesBloc, EdgesState>(
-                buildWhen: (EdgesState p, EdgesState c) => c.images != p.images || c.opacity != p.opacity,
-                builder: (BuildContext context, EdgesState state) {
-                  return SliverGrid.builder(
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      childAspectRatio: 3 / 4,
-                      maxCrossAxisExtent: 300,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
-                    itemBuilder: imageFrameBuilder,
-                    itemCount: state.imagesList.length + 1,
-                  );
-                },
-              ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.only(left: 8, right: 8, bottom: context.query.padding.bottom + 8),
+            sliver: BlocBuilder<EdgesBloc, EdgesState>(
+              buildWhen: (EdgesState p, EdgesState c) =>
+                  c.images != p.images ||
+                  c.opacity != p.opacity ||
+                  c.dotsCloudOn != p.dotsCloudOn ||
+                  c.painterOn != p.painterOn ||
+                  c.selectedImages != p.selectedImages,
+              builder: (BuildContext context, EdgesState state) {
+                return SliverGrid.builder(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    childAspectRatio: 3 / 4,
+                    maxCrossAxisExtent: 300,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemBuilder: imageFrameBuilder,
+                  itemCount: state.imagesList.length + 1,
+                );
+              },
             ),
-          ],
-        ),
-        floatingActionButton: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FloatingActionButton.small(
-              onPressed: key.currentState?.openEndDrawer,
-              child: Icon(Icons.menu_open_rounded),
-            ),
-            const SizedBox(width: 8),
-            FloatingActionButton.small(
-              onPressed: startCamera,
-              child: Icon(Icons.camera_alt),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            onPressed: key.currentState?.openEndDrawer,
+            child: Icon(Icons.menu_open_rounded),
+          ),
+          const SizedBox(width: 8),
+          FloatingActionButton.small(
+            onPressed: startCamera,
+            child: Icon(Icons.camera_alt),
+          ),
+        ],
       ),
     );
   }

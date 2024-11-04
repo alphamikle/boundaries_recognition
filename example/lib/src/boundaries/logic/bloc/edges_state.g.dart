@@ -9,18 +9,12 @@ part of 'edges_state.dart';
 extension _$EdgesStateAutoequal on EdgesState {
   List<Object?> get _$props => [
         images,
+        selectedImages,
         imagesList,
         testImages,
-        lightSettings,
-        darkSettings,
+        settings,
+        settingsIndex,
         maxImageSize,
-        threads,
-        darkSettingsOn,
-        grayScaleOn,
-        blurOn,
-        resizeOn,
-        sobelOn,
-        bwOn,
         dotsCloudOn,
         painterOn,
         processing,
@@ -35,29 +29,17 @@ extension _$EdgesStateAutoequal on EdgesState {
 abstract class _$EdgesStateCWProxy {
   EdgesState images(Map<String, ImageResult> images);
 
+  EdgesState selectedImages(Set<String> selectedImages);
+
   EdgesState imagesList(List<ImageResult> imagesList);
 
   EdgesState testImages(Map<String, TestImage> testImages);
 
-  EdgesState lightSettings(Settings lightSettings);
+  EdgesState settings(List<EdgeVisionSettings> settings);
 
-  EdgesState darkSettings(Settings darkSettings);
+  EdgesState settingsIndex(int? settingsIndex);
 
   EdgesState maxImageSize(int maxImageSize);
-
-  EdgesState threads(int threads);
-
-  EdgesState darkSettingsOn(bool darkSettingsOn);
-
-  EdgesState grayScaleOn(bool grayScaleOn);
-
-  EdgesState blurOn(bool blurOn);
-
-  EdgesState resizeOn(bool resizeOn);
-
-  EdgesState sobelOn(bool sobelOn);
-
-  EdgesState bwOn(bool bwOn);
 
   EdgesState dotsCloudOn(bool dotsCloudOn);
 
@@ -75,18 +57,12 @@ abstract class _$EdgesStateCWProxy {
   /// ````
   EdgesState call({
     Map<String, ImageResult>? images,
+    Set<String>? selectedImages,
     List<ImageResult>? imagesList,
     Map<String, TestImage>? testImages,
-    Settings? lightSettings,
-    Settings? darkSettings,
+    List<EdgeVisionSettings>? settings,
+    int? settingsIndex,
     int? maxImageSize,
-    int? threads,
-    bool? darkSettingsOn,
-    bool? grayScaleOn,
-    bool? blurOn,
-    bool? resizeOn,
-    bool? sobelOn,
-    bool? bwOn,
     bool? dotsCloudOn,
     bool? painterOn,
     bool? processing,
@@ -104,6 +80,10 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
   EdgesState images(Map<String, ImageResult> images) => this(images: images);
 
   @override
+  EdgesState selectedImages(Set<String> selectedImages) =>
+      this(selectedImages: selectedImages);
+
+  @override
   EdgesState imagesList(List<ImageResult> imagesList) =>
       this(imagesList: imagesList);
 
@@ -112,37 +92,15 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
       this(testImages: testImages);
 
   @override
-  EdgesState lightSettings(Settings lightSettings) =>
-      this(lightSettings: lightSettings);
+  EdgesState settings(List<EdgeVisionSettings> settings) =>
+      this(settings: settings);
 
   @override
-  EdgesState darkSettings(Settings darkSettings) =>
-      this(darkSettings: darkSettings);
+  EdgesState settingsIndex(int? settingsIndex) =>
+      this(settingsIndex: settingsIndex);
 
   @override
   EdgesState maxImageSize(int maxImageSize) => this(maxImageSize: maxImageSize);
-
-  @override
-  EdgesState threads(int threads) => this(threads: threads);
-
-  @override
-  EdgesState darkSettingsOn(bool darkSettingsOn) =>
-      this(darkSettingsOn: darkSettingsOn);
-
-  @override
-  EdgesState grayScaleOn(bool grayScaleOn) => this(grayScaleOn: grayScaleOn);
-
-  @override
-  EdgesState blurOn(bool blurOn) => this(blurOn: blurOn);
-
-  @override
-  EdgesState resizeOn(bool resizeOn) => this(resizeOn: resizeOn);
-
-  @override
-  EdgesState sobelOn(bool sobelOn) => this(sobelOn: sobelOn);
-
-  @override
-  EdgesState bwOn(bool bwOn) => this(bwOn: bwOn);
 
   @override
   EdgesState dotsCloudOn(bool dotsCloudOn) => this(dotsCloudOn: dotsCloudOn);
@@ -166,18 +124,12 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
   /// ````
   EdgesState call({
     Object? images = const $CopyWithPlaceholder(),
+    Object? selectedImages = const $CopyWithPlaceholder(),
     Object? imagesList = const $CopyWithPlaceholder(),
     Object? testImages = const $CopyWithPlaceholder(),
-    Object? lightSettings = const $CopyWithPlaceholder(),
-    Object? darkSettings = const $CopyWithPlaceholder(),
+    Object? settings = const $CopyWithPlaceholder(),
+    Object? settingsIndex = const $CopyWithPlaceholder(),
     Object? maxImageSize = const $CopyWithPlaceholder(),
-    Object? threads = const $CopyWithPlaceholder(),
-    Object? darkSettingsOn = const $CopyWithPlaceholder(),
-    Object? grayScaleOn = const $CopyWithPlaceholder(),
-    Object? blurOn = const $CopyWithPlaceholder(),
-    Object? resizeOn = const $CopyWithPlaceholder(),
-    Object? sobelOn = const $CopyWithPlaceholder(),
-    Object? bwOn = const $CopyWithPlaceholder(),
     Object? dotsCloudOn = const $CopyWithPlaceholder(),
     Object? painterOn = const $CopyWithPlaceholder(),
     Object? processing = const $CopyWithPlaceholder(),
@@ -188,6 +140,11 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
           ? _value.images
           // ignore: cast_nullable_to_non_nullable
           : images as Map<String, ImageResult>,
+      selectedImages: selectedImages == const $CopyWithPlaceholder() ||
+              selectedImages == null
+          ? _value.selectedImages
+          // ignore: cast_nullable_to_non_nullable
+          : selectedImages as Set<String>,
       imagesList:
           imagesList == const $CopyWithPlaceholder() || imagesList == null
               ? _value.imagesList
@@ -198,51 +155,19 @@ class _$EdgesStateCWProxyImpl implements _$EdgesStateCWProxy {
               ? _value.testImages
               // ignore: cast_nullable_to_non_nullable
               : testImages as Map<String, TestImage>,
-      lightSettings:
-          lightSettings == const $CopyWithPlaceholder() || lightSettings == null
-              ? _value.lightSettings
-              // ignore: cast_nullable_to_non_nullable
-              : lightSettings as Settings,
-      darkSettings:
-          darkSettings == const $CopyWithPlaceholder() || darkSettings == null
-              ? _value.darkSettings
-              // ignore: cast_nullable_to_non_nullable
-              : darkSettings as Settings,
+      settings: settings == const $CopyWithPlaceholder() || settings == null
+          ? _value.settings
+          // ignore: cast_nullable_to_non_nullable
+          : settings as List<EdgeVisionSettings>,
+      settingsIndex: settingsIndex == const $CopyWithPlaceholder()
+          ? _value.settingsIndex
+          // ignore: cast_nullable_to_non_nullable
+          : settingsIndex as int?,
       maxImageSize:
           maxImageSize == const $CopyWithPlaceholder() || maxImageSize == null
               ? _value.maxImageSize
               // ignore: cast_nullable_to_non_nullable
               : maxImageSize as int,
-      threads: threads == const $CopyWithPlaceholder() || threads == null
-          ? _value.threads
-          // ignore: cast_nullable_to_non_nullable
-          : threads as int,
-      darkSettingsOn: darkSettingsOn == const $CopyWithPlaceholder() ||
-              darkSettingsOn == null
-          ? _value.darkSettingsOn
-          // ignore: cast_nullable_to_non_nullable
-          : darkSettingsOn as bool,
-      grayScaleOn:
-          grayScaleOn == const $CopyWithPlaceholder() || grayScaleOn == null
-              ? _value.grayScaleOn
-              // ignore: cast_nullable_to_non_nullable
-              : grayScaleOn as bool,
-      blurOn: blurOn == const $CopyWithPlaceholder() || blurOn == null
-          ? _value.blurOn
-          // ignore: cast_nullable_to_non_nullable
-          : blurOn as bool,
-      resizeOn: resizeOn == const $CopyWithPlaceholder() || resizeOn == null
-          ? _value.resizeOn
-          // ignore: cast_nullable_to_non_nullable
-          : resizeOn as bool,
-      sobelOn: sobelOn == const $CopyWithPlaceholder() || sobelOn == null
-          ? _value.sobelOn
-          // ignore: cast_nullable_to_non_nullable
-          : sobelOn as bool,
-      bwOn: bwOn == const $CopyWithPlaceholder() || bwOn == null
-          ? _value.bwOn
-          // ignore: cast_nullable_to_non_nullable
-          : bwOn as bool,
       dotsCloudOn:
           dotsCloudOn == const $CopyWithPlaceholder() || dotsCloudOn == null
               ? _value.dotsCloudOn
@@ -269,4 +194,28 @@ extension $EdgesStateCopyWith on EdgesState {
   /// Returns a callable class that can be used as follows: `instanceOfEdgesState.copyWith(...)` or like so:`instanceOfEdgesState.copyWith.fieldName(...)`.
   // ignore: library_private_types_in_public_api
   _$EdgesStateCWProxy get copyWith => _$EdgesStateCWProxyImpl(this);
+
+  /// Copies the object with the specific fields set to `null`. If you pass `false` as a parameter, nothing will be done and it will be ignored. Don't do it. Prefer `copyWith(field: null)` or `EdgesState(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
+  ///
+  /// Usage
+  /// ```dart
+  /// EdgesState(...).copyWithNull(firstField: true, secondField: true)
+  /// ````
+  EdgesState copyWithNull({
+    bool settingsIndex = false,
+  }) {
+    return EdgesState(
+      images: images,
+      selectedImages: selectedImages,
+      imagesList: imagesList,
+      testImages: testImages,
+      settings: settings,
+      settingsIndex: settingsIndex == true ? null : this.settingsIndex,
+      maxImageSize: maxImageSize,
+      dotsCloudOn: dotsCloudOn,
+      painterOn: painterOn,
+      processing: processing,
+      opacity: opacity,
+    );
+  }
 }

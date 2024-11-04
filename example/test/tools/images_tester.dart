@@ -4,24 +4,24 @@ import 'package:image/image.dart';
 
 import 'settings_iterator.dart';
 
-typedef Score = (int maxSucceededImages, int totalImages, Settings bestSettings);
+typedef Score = (int maxSucceededImages, int totalImages, EdgeVisionSettings bestSettings);
 
 Future<void> imagesTester({
   required String id,
   required List<Image> imagesToProcess,
-  required Settings initialSettings,
-  required Settings endSettings,
-  required Settings stepSettings,
+  required EdgeVisionSettings initialSettings,
+  required EdgeVisionSettings endSettings,
+  required EdgeVisionSettings stepSettings,
 }) async {
   int maxSucceededImages = 0;
   final int totalImages = imagesToProcess.length;
-  Settings? bestSettings;
+  EdgeVisionSettings? bestSettings;
 
   await iterateOverSettings(
     initial: initialSettings,
     end: endSettings,
     step: stepSettings,
-    callback: (Settings settings, int index, int total) async {
+    callback: (EdgeVisionSettings settings, int index, int total) async {
       final EdgeVision edgeVision = EdgeVision(settings: {settings});
       int succeededImages = 0;
 

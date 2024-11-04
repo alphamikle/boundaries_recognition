@@ -10,6 +10,7 @@ extension _$ImageResultAutoequal on ImageResult {
   List<Object?> get _$props => [
         name,
         originalImage,
+        decodedImage,
         processedImage,
         edges,
         processedImageWidth,
@@ -25,6 +26,8 @@ abstract class _$ImageResultCWProxy {
   ImageResult name(String name);
 
   ImageResult originalImage(Uint8List originalImage);
+
+  ImageResult decodedImage(Image decodedImage);
 
   ImageResult processedImage(Uint8List? processedImage);
 
@@ -43,6 +46,7 @@ abstract class _$ImageResultCWProxy {
   ImageResult call({
     String? name,
     Uint8List? originalImage,
+    Image? decodedImage,
     Uint8List? processedImage,
     Edges? edges,
     int? processedImageWidth,
@@ -62,6 +66,10 @@ class _$ImageResultCWProxyImpl implements _$ImageResultCWProxy {
   @override
   ImageResult originalImage(Uint8List originalImage) =>
       this(originalImage: originalImage);
+
+  @override
+  ImageResult decodedImage(Image decodedImage) =>
+      this(decodedImage: decodedImage);
 
   @override
   ImageResult processedImage(Uint8List? processedImage) =>
@@ -89,6 +97,7 @@ class _$ImageResultCWProxyImpl implements _$ImageResultCWProxy {
   ImageResult call({
     Object? name = const $CopyWithPlaceholder(),
     Object? originalImage = const $CopyWithPlaceholder(),
+    Object? decodedImage = const $CopyWithPlaceholder(),
     Object? processedImage = const $CopyWithPlaceholder(),
     Object? edges = const $CopyWithPlaceholder(),
     Object? processedImageWidth = const $CopyWithPlaceholder(),
@@ -104,6 +113,11 @@ class _$ImageResultCWProxyImpl implements _$ImageResultCWProxy {
               ? _value.originalImage
               // ignore: cast_nullable_to_non_nullable
               : originalImage as Uint8List,
+      decodedImage:
+          decodedImage == const $CopyWithPlaceholder() || decodedImage == null
+              ? _value.decodedImage
+              // ignore: cast_nullable_to_non_nullable
+              : decodedImage as Image,
       processedImage: processedImage == const $CopyWithPlaceholder()
           ? _value.processedImage
           // ignore: cast_nullable_to_non_nullable

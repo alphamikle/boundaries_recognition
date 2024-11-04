@@ -9,21 +9,16 @@ import '../model/test_image.dart';
 part 'edges_state.g.dart';
 
 @autoequal
-@CopyWith()
+@CopyWith(copyWithNull: true)
 class EdgesState extends Equatable {
   const EdgesState({
     required this.images,
+    required this.selectedImages,
     required this.imagesList,
     required this.testImages,
     required this.settings,
+    required this.settingsIndex,
     required this.maxImageSize,
-    required this.threads,
-    required this.darkSettingsOn,
-    required this.grayScaleOn,
-    required this.blurOn,
-    required this.resizeOn,
-    required this.sobelOn,
-    required this.bwOn,
     required this.dotsCloudOn,
     required this.painterOn,
     required this.processing,
@@ -32,17 +27,12 @@ class EdgesState extends Equatable {
 
   factory EdgesState.initial() => const EdgesState(
         images: {},
+        selectedImages: {},
         imagesList: [],
         testImages: {},
         settings: [],
+        settingsIndex: null,
         maxImageSize: 400,
-        threads: 1,
-        darkSettingsOn: false,
-        grayScaleOn: true,
-        blurOn: true,
-        resizeOn: false,
-        sobelOn: true,
-        bwOn: true,
         dotsCloudOn: false,
         painterOn: true,
         processing: false,
@@ -51,27 +41,17 @@ class EdgesState extends Equatable {
 
   final Map<String, ImageResult> images;
 
+  final Set<String> selectedImages;
+
   final List<ImageResult> imagesList;
 
   final Map<String, TestImage> testImages;
 
-  final List<Settings> settings;
+  final List<EdgeVisionSettings> settings;
+
+  final int? settingsIndex;
 
   final int maxImageSize;
-
-  final int threads;
-
-  final bool darkSettingsOn;
-
-  final bool grayScaleOn;
-
-  final bool blurOn;
-
-  final bool resizeOn;
-
-  final bool sobelOn;
-
-  final bool bwOn;
 
   final bool dotsCloudOn;
 
@@ -80,6 +60,13 @@ class EdgesState extends Equatable {
   final bool processing;
 
   final double opacity;
+
+  EdgeVisionSettings? get selectedSettings {
+    if (settingsIndex == null || settingsIndex! >= settings.length || settingsIndex! < 0) {
+      return null;
+    }
+    return settings[settingsIndex!];
+  }
 
   Map<String, String> get success {
     final Map<String, String> results = {

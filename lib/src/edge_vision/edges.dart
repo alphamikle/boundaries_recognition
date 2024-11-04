@@ -28,7 +28,23 @@ class Edges {
     required this.xMoveTo,
     required this.yMoveTo,
     required this.recognizedObjects,
+    required this.square,
   });
+
+  const Edges.empty()
+      : leftMiddle = null,
+        leftTop = null,
+        topMiddle = null,
+        rightTop = null,
+        rightMiddle = null,
+        rightBottom = null,
+        bottomMiddle = null,
+        leftBottom = null,
+        allPoints = const [],
+        xMoveTo = null,
+        yMoveTo = null,
+        recognizedObjects = const [],
+        square = null;
 
   final Point<int>? leftMiddle;
   final Point<int>? leftTop;
@@ -42,8 +58,10 @@ class Edges {
   final List<Point<int>> allPoints;
   final List<int> recognizedObjects;
 
-  final XAxis xMoveTo;
-  final YAxis yMoveTo;
+  final XAxis? xMoveTo;
+  final YAxis? yMoveTo;
+
+  final int? square;
 
   List<Point<int>> get corners => [
         leftMiddle,

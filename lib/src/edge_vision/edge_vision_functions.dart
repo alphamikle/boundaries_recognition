@@ -10,9 +10,16 @@ import '../tools/point_extensions.dart';
 
 Edges findImageEdgesSync({
   required Image image,
-  required Settings settings,
+  required EdgeVisionSettings settings,
 }) {
-  final Settings(:searchMatrixSize, :minObjectSize, :distortionAngleThreshold, :skewnessThreshold) = settings;
+  final EdgeVisionSettings(
+    :searchMatrixSize,
+    :minObjectSize,
+    directionAngleLevel: distortionAngleThreshold,
+    :skewnessThreshold,
+    :areaThreshold,
+    :symmetricAngleThreshold,
+  ) = settings;
 
   final int width = image.width;
   final int height = image.height;
@@ -96,6 +103,11 @@ Edges findImageEdgesSync({
     }
   }
 
+  bool leftTopFound = false;
+  bool rightTopFound = false;
+  bool rightBottomFound = false;
+  bool leftBottomFound = false;
+
   Point<int> leftTop = Point(width, 0);
   Point<int> rightTop = Point(0, height);
   Point<int> rightBottom = const Point(0, 0);
@@ -104,13 +116,23 @@ Edges findImageEdgesSync({
   for (final Point<int> point in allPoints) {
     if (point.ltSum < leftTop.ltSum) {
       leftTop = point;
+      leftTopFound = true;
     } else if (point.rtSum > rightTop.rtSum) {
       rightTop = point;
+      rightTopFound = true;
     } else if (point.rbSum > rightBottom.rbSum) {
       rightBottom = point;
+      rightBottomFound = true;
     } else if (point.lbSum > leftBottom.lbSum) {
       leftBottom = point;
+      leftBottomFound = true;
     }
+  }
+
+  final bool cornersFound = leftTopFound && rightTopFound && rightBottomFound && leftBottomFound;
+
+  if (cornersFound == false) {
+    return const Edges.empty();
   }
 
   final List<Point<int>> corners = [leftTop, rightTop, rightBottom, leftBottom]..sort((a, b) => a.x.compareTo(b.x));
@@ -119,27 +141,67 @@ Edges findImageEdgesSync({
 
   leftTop = leftCorners[0];
   leftBottom = leftCorners[1];
-
   rightTop = rightCorners[0];
   rightBottom = rightCorners[1];
 
-  final double topDistance = distance(leftTop, rightTop);
-  final double rightDistance = distance(rightTop, rightBottom);
-  final double bottomDistance = distance(rightBottom, leftBottom);
-  final double leftDistance = distance(leftBottom, leftTop);
+  final double topLength = distance(leftTop, rightTop);
+  final double rightLength = distance(rightTop, rightBottom);
+  final double bottomLength = distance(rightBottom, leftBottom);
+  final double leftLength = distance(leftBottom, leftTop);
 
   bool wrongFigure = false;
 
-  if (distanceDifference(topDistance, bottomDistance) > skewnessThreshold) {
-    wrongFigure = true;
-  } else if (distanceDifference(rightDistance, leftDistance) > skewnessThreshold) {
-    wrongFigure = true;
+  if (cornersFound) {
+    if (percentageDifference(topLength, bottomLength) > skewnessThreshold) {
+      wrongFigure = true;
+    } else if (percentageDifference(rightLength, leftLength) > skewnessThreshold) {
+      wrongFigure = true;
+    }
+  }
+
+  if (wrongFigure) {
+    return const Edges.empty();
   }
 
   final double leftTopAngle = angle(leftBottom, leftTop, rightTop);
   final double rightTopAngle = angle(leftTop, rightTop, rightBottom);
   final double rightBottomAngle = angle(rightTop, rightBottom, leftBottom);
   final double leftBottomAngle = angle(rightBottom, leftBottom, leftTop);
+
+  bool hasWrongAngles({bool tryFix = true}) {
+    final bool isLeftTopAndRightBottomSimilar = percentageDifference(leftTopAngle, rightBottomAngle) <= symmetricAngleThreshold;
+    final bool isRightTopAndLeftBottomSimilar = percentageDifference(rightTopAngle, leftBottomAngle) <= symmetricAngleThreshold;
+    final bool isLeftTopAndRightTopSimilar = percentageDifference(leftTopAngle, rightTopAngle) <= symmetricAngleThreshold;
+    final bool isLeftBottomAndRightBottomSimilar = percentageDifference(leftBottomAngle, rightBottomAngle) <= symmetricAngleThreshold;
+    final bool isLeftTopAndLeftBottomSimilar = percentageDifference(leftTopAngle, leftBottomAngle) <= symmetricAngleThreshold;
+    final bool isRightTopAndRightBottomSimilar = percentageDifference(rightTopAngle, rightBottomAngle) <= symmetricAngleThreshold;
+
+    bool isWrongAngles = true;
+
+    if (isLeftTopAndRightBottomSimilar && isRightTopAndLeftBottomSimilar) {
+      isWrongAngles = true;
+    } else if (isLeftTopAndRightTopSimilar && isLeftBottomAndRightBottomSimilar) {
+      isWrongAngles = true;
+    } else if (isLeftTopAndLeftBottomSimilar && isRightTopAndRightBottomSimilar) {
+      isWrongAngles = true;
+    }
+
+    if (tryFix && isWrongAngles) {
+      // TODO(alphamikle): Fix sides lengths (later)
+    }
+
+    return isWrongAngles;
+  }
+
+  if (hasWrongAngles()) {
+    return const Edges.empty();
+  }
+
+  final int objectSquare = square(leftTop, rightTop, rightBottom, leftBottom);
+
+  if (objectSquare < areaThreshold) {
+    return const Edges.empty();
+  }
 
   final Distortion distortionLevel = distortion(
     topLeft: leftTopAngle,
@@ -148,23 +210,6 @@ Edges findImageEdgesSync({
     bottomRight: rightBottomAngle,
     threshold: distortionAngleThreshold,
   );
-
-  if (wrongFigure) {
-    return const Edges(
-      leftMiddle: null,
-      leftTop: null,
-      topMiddle: null,
-      rightTop: null,
-      rightMiddle: null,
-      rightBottom: null,
-      bottomMiddle: null,
-      leftBottom: null,
-      allPoints: [],
-      xMoveTo: XAxis.center,
-      yMoveTo: YAxis.center,
-      recognizedObjects: [],
-    );
-  }
 
   return Edges(
     leftMiddle: null,
@@ -179,22 +224,40 @@ Edges findImageEdgesSync({
     xMoveTo: distortionLevel.x,
     yMoveTo: distortionLevel.y,
     recognizedObjects: recognizedObjects,
+    square: objectSquare,
   );
 }
 
-// Edges findImageEdgesRaw(TransferableTypedData rawImage) {}
-
 Image prepareImageSync({
   required Image image,
-  required Settings settings,
+  required EdgeVisionSettings settings,
 }) {
   Image imageToProcess = image;
 
-  final Settings(:blackWhiteThreshold, :sobelAmount, :grayscaleAmount, :blurRadius) = settings;
+  final EdgeVisionSettings(
+    :blackWhiteThreshold,
+    :grayscaleLevel,
+    :grayscaleAmount,
+    :sobelLevel,
+    :sobelAmount,
+    :blurRadius,
+  ) = settings;
 
-  imageToProcess = grayscale(imageToProcess, amount: grayscaleAmount);
-  imageToProcess = gaussianBlur(imageToProcess, radius: blurRadius);
-  imageToProcess = sobel(imageToProcess, amount: sobelAmount);
+  if (grayscaleLevel > 0) {
+    for (int i = 0; i < grayscaleAmount; i++) {
+      imageToProcess = grayscale(imageToProcess, amount: grayscaleLevel);
+    }
+  }
+
+  if (blurRadius > 0) {
+    imageToProcess = gaussianBlur(imageToProcess, radius: blurRadius);
+  }
+
+  if (sobelLevel > 0) {
+    for (int i = 0; i < sobelAmount; i++) {
+      imageToProcess = sobel(imageToProcess, amount: sobelLevel);
+    }
+  }
 
   if (blackWhiteThreshold > 0 && blackWhiteThreshold < 255) {
     imageToProcess = imageToProcess.toBlackWhite(blackWhiteThreshold);
