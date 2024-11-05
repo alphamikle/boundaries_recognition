@@ -1,5 +1,6 @@
 import 'package:image/image.dart' as i;
 
+import 'histogram.dart';
 import 'pixel_extensions.dart';
 
 extension ExtendedImage on i.Image {
@@ -111,6 +112,76 @@ extension ExtendedImage on i.Image {
       y += currentPieceHeight;
     }
     return imagePieces;
+  }
+
+  Histogram histogram() {
+    final List<int> red = List.filled(256, 0);
+    final List<int> green = List.filled(256, 0);
+    final List<int> blue = List.filled(256, 0);
+    final List<int> luminance = List.filled(256, 0);
+
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        final i.Pixel pixel = getPixel(x, y);
+        final num r = pixel.r;
+        final num g = pixel.g;
+        final num b = pixel.b;
+        final num l = pixel.luminance;
+
+        red[r.toInt()]++;
+        green[g.toInt()]++;
+        blue[b.toInt()]++;
+        luminance[l.toInt()]++;
+      }
+    }
+
+    return Histogram((red: red, green: green, blue: blue, luminance: luminance));
+  }
+
+  i.Channel bestChannel(double luminanceThreshold) {
+    final Histogram h = histogram();
+    final LevelsHistogramsMeanAndVariance meanAndVariance = h.meanAndVariance();
+
+    final double redVariance = meanAndVariance.red.variance;
+    final double greenVariance = meanAndVariance.green.variance;
+    final double blueVariance = meanAndVariance.blue.variance;
+    final double luminanceVariance = meanAndVariance.luminance.variance;
+    final double target = luminanceVariance * luminanceThreshold;
+
+    if (redVariance > target) {
+      return i.Channel.red;
+    } else if (greenVariance > target) {
+      return i.Channel.green;
+    } else if (blueVariance > target) {
+      return i.Channel.blue;
+    }
+    return i.Channel.luminance;
+  }
+
+  i.Image withBestChannelOnly(double luminanceThreshold) {
+    final i.Channel channel = bestChannel(luminanceThreshold);
+
+    if (channel == i.Channel.alpha) {
+      return this;
+    }
+
+    final i.Image result = i.Image.from(this);
+
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        final i.Pixel pixel = getPixel(x, y);
+
+        final _ = switch (channel) {
+          i.Channel.red => result.setPixelRgba(x, y, pixel.r, pixel.r, pixel.r, pixel.a),
+          i.Channel.green => result.setPixelRgba(x, y, pixel.g, pixel.g, pixel.g, pixel.a),
+          i.Channel.blue => result.setPixelRgba(x, y, pixel.b, pixel.b, pixel.b, pixel.a),
+          i.Channel.luminance => result.setPixelRgba(x, y, pixel.luminance, pixel.luminance, pixel.luminance, pixel.a),
+          i.Channel.alpha => null,
+        };
+      }
+    }
+
+    return result;
   }
 }
 

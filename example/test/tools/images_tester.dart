@@ -19,10 +19,10 @@ Future<void> imagesTester({
 
   await iterateOverSettings(
     initial: initialSettings,
-    end: endSettings,
+    target: endSettings,
     step: stepSettings,
     callback: (EdgeVisionSettings settings, int index, int total) async {
-      final EdgeVision edgeVision = EdgeVision(settings: {settings});
+      final EdgeVision edgeVision = EdgeVision(settings: {settings}, processingMode: EdgeProcessingMode.allInOne);
       int succeededImages = 0;
 
       start('Processing ${imagesToProcess.length}');

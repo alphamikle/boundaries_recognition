@@ -149,15 +149,15 @@ class SettingsFragment extends StatelessWidget {
                 onChanged: (double value) async => bloc.applySettings((EdgeVisionSettings settings) => settings.copyWith(directionAngleLevel: value)),
                 min: 0.0,
                 max: 6.0,
-                divisions: 6 ~/ 0.15,
+                divisions: 6 ~/ 0.25,
               ),
               SimpleSlider(
                 title: 'Symmetric Angle Threshold',
                 value: state.selectedSettings!.symmetricAngleThreshold,
                 onChanged: (double value) async => bloc.applySettings((EdgeVisionSettings settings) => settings.copyWith(symmetricAngleThreshold: value)),
                 min: 0.0,
-                max: 1.0,
-                divisions: 1 ~/ 0.1,
+                max: 10.0,
+                divisions: 10 ~/ 0.25,
               ),
               const SizedBox(height: 8),
               SimpleSlider(

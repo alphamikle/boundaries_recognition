@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:edge_vision/edge_vision.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,6 +20,14 @@ class ImageFrame extends StatelessWidget {
   final bool selected;
 
   bool get hasProcessedImage => result.processedImage != null;
+
+  void toggleImageSelection(BuildContext context) {
+    log('''
+Image ${result.name}:
+Edges: ${result.edges}
+''');
+    context.read<EdgesBloc>().toggleImageSelection(result.name);
+  }
 
   bool get hasEdges {
     final Edges? edges = result.edges;
@@ -105,7 +115,7 @@ class ImageFrame extends StatelessWidget {
               child: Material(
                 type: MaterialType.transparency,
                 child: InkWell(
-                  onTap: () => context.read<EdgesBloc>().toggleImageSelection(result.name),
+                  onTap: () => toggleImageSelection(context),
                 ),
               ),
             ),
@@ -114,7 +124,7 @@ class ImageFrame extends StatelessWidget {
               left: 8,
               child: Checkbox(
                 value: selected,
-                onChanged: (_) => context.read<EdgesBloc>().toggleImageSelection(result.name),
+                onChanged: (_) => toggleImageSelection(context),
               ),
             ),
           ],

@@ -12,6 +12,7 @@ class EdgeVisionSettings {
     required this.sobelAmount,
     required this.blurRadius,
     required this.areaThreshold,
+    required this.luminanceThreshold,
   });
 
   const EdgeVisionSettings.zero({
@@ -27,7 +28,26 @@ class EdgeVisionSettings {
     this.sobelAmount = 0,
     this.blurRadius = 0,
     this.areaThreshold = 0,
+    this.luminanceThreshold = 0,
   });
+
+  factory EdgeVisionSettings.fromFields(List<num> fields) {
+    return EdgeVisionSettings(
+      searchMatrixSize: fields[0].toInt(),
+      minObjectSize: fields[1].toInt(),
+      directionAngleLevel: fields[2].toDouble(),
+      symmetricAngleThreshold: fields[3].toDouble(),
+      skewnessThreshold: fields[4].toDouble(),
+      blackWhiteThreshold: fields[5].toInt(),
+      grayscaleLevel: fields[6].toDouble(),
+      grayscaleAmount: fields[7].toInt(),
+      sobelLevel: fields[8].toDouble(),
+      sobelAmount: fields[9].toInt(),
+      blurRadius: fields[10].toInt(),
+      areaThreshold: fields[11].toDouble(),
+      luminanceThreshold: fields[12].toDouble(),
+    );
+  }
 
   /// Search matrix size - neighboring pixels to be searched relative to the current pixel
   final int searchMatrixSize;
@@ -55,6 +75,24 @@ class EdgeVisionSettings {
 
   final double areaThreshold;
 
+  final double luminanceThreshold;
+
+  List<num> get fields => [
+        searchMatrixSize,
+        minObjectSize,
+        directionAngleLevel,
+        symmetricAngleThreshold,
+        skewnessThreshold,
+        blackWhiteThreshold,
+        grayscaleLevel,
+        grayscaleAmount,
+        sobelLevel,
+        sobelAmount,
+        blurRadius,
+        areaThreshold,
+        luminanceThreshold,
+      ];
+
   EdgeVisionSettings operator +(EdgeVisionSettings other) => EdgeVisionSettings(
         searchMatrixSize: searchMatrixSize + other.searchMatrixSize,
         minObjectSize: minObjectSize + other.minObjectSize,
@@ -68,6 +106,7 @@ class EdgeVisionSettings {
         sobelAmount: sobelAmount + other.sobelAmount,
         blurRadius: blurRadius + other.blurRadius,
         areaThreshold: areaThreshold + other.areaThreshold,
+        luminanceThreshold: luminanceThreshold + other.luminanceThreshold,
       );
 
   EdgeVisionSettings operator /(num delimiter) => EdgeVisionSettings(
@@ -83,6 +122,7 @@ class EdgeVisionSettings {
         sobelAmount: sobelAmount ~/ delimiter,
         blurRadius: blurRadius ~/ delimiter,
         areaThreshold: areaThreshold / delimiter,
+        luminanceThreshold: luminanceThreshold / luminanceThreshold,
       );
 
   @override
@@ -101,7 +141,8 @@ class EdgeVisionSettings {
           sobelLevel == other.sobelLevel &&
           sobelAmount == other.sobelAmount &&
           blurRadius == other.blurRadius &&
-          areaThreshold == other.areaThreshold;
+          areaThreshold == other.areaThreshold &&
+          luminanceThreshold == other.luminanceThreshold;
 
   @override
   int get hashCode =>
@@ -116,7 +157,8 @@ class EdgeVisionSettings {
       sobelLevel.hashCode ^
       sobelAmount.hashCode ^
       blurRadius.hashCode ^
-      areaThreshold.hashCode;
+      areaThreshold.hashCode ^
+      luminanceThreshold.hashCode;
 
   @override
   String toString() {
@@ -134,6 +176,7 @@ EdgeVisionSettings{
   sobelAmount: $sobelAmount,
   blurRadius: $blurRadius,
   areaThreshold: $areaThreshold,
+  luminanceThreshold: $luminanceThreshold,
 }''';
   }
 
@@ -150,6 +193,7 @@ EdgeVisionSettings{
     int? sobelAmount,
     int? blurRadius,
     double? areaThreshold,
+    double? luminanceThreshold,
   }) {
     return EdgeVisionSettings(
       searchMatrixSize: searchMatrixSize ?? this.searchMatrixSize,
@@ -164,6 +208,7 @@ EdgeVisionSettings{
       sobelAmount: sobelAmount ?? this.sobelAmount,
       blurRadius: blurRadius ?? this.blurRadius,
       areaThreshold: areaThreshold ?? this.areaThreshold,
+      luminanceThreshold: luminanceThreshold ?? this.luminanceThreshold,
     );
   }
 }

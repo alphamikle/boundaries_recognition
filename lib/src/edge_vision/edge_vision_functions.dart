@@ -1,6 +1,6 @@
 import 'dart:math' show Point;
 
-import 'package:image/image.dart' show Image, Pixel, gaussianBlur, grayscale, sobel;
+import 'package:image/image.dart' show Image, Pixel, gaussianBlur, sobel;
 
 import '../../edge_vision.dart';
 import '../tools/distortion.dart';
@@ -15,7 +15,7 @@ Edges findImageEdgesSync({
   final EdgeVisionSettings(
     :searchMatrixSize,
     :minObjectSize,
-    directionAngleLevel: distortionAngleThreshold,
+    :directionAngleLevel,
     :skewnessThreshold,
     :areaThreshold,
     :symmetricAngleThreshold,
@@ -179,11 +179,11 @@ Edges findImageEdgesSync({
     bool isWrongAngles = true;
 
     if (isLeftTopAndRightBottomSimilar && isRightTopAndLeftBottomSimilar) {
-      isWrongAngles = true;
+      isWrongAngles = false;
     } else if (isLeftTopAndRightTopSimilar && isLeftBottomAndRightBottomSimilar) {
-      isWrongAngles = true;
+      isWrongAngles = false;
     } else if (isLeftTopAndLeftBottomSimilar && isRightTopAndRightBottomSimilar) {
-      isWrongAngles = true;
+      isWrongAngles = false;
     }
 
     if (tryFix && isWrongAngles) {
@@ -198,9 +198,11 @@ Edges findImageEdgesSync({
   }
 
   final int objectSquare = square(leftTop, rightTop, rightBottom, leftBottom);
+  final int imageSquare = width * height;
+  final double relativeSquare = objectSquare / imageSquare;
 
-  if (objectSquare < areaThreshold) {
-    return const Edges.empty();
+  if (relativeSquare < areaThreshold) {
+    return Edges.empty().copyWith(square: relativeSquare);
   }
 
   final Distortion distortionLevel = distortion(
@@ -208,7 +210,7 @@ Edges findImageEdgesSync({
     topRight: rightTopAngle,
     bottomLeft: leftBottomAngle,
     bottomRight: rightBottomAngle,
-    threshold: distortionAngleThreshold,
+    threshold: directionAngleLevel,
   );
 
   return Edges(
@@ -224,7 +226,7 @@ Edges findImageEdgesSync({
     xMoveTo: distortionLevel.x,
     yMoveTo: distortionLevel.y,
     recognizedObjects: recognizedObjects,
-    square: objectSquare,
+    square: relativeSquare,
   );
 }
 
@@ -236,18 +238,13 @@ Image prepareImageSync({
 
   final EdgeVisionSettings(
     :blackWhiteThreshold,
-    :grayscaleLevel,
-    :grayscaleAmount,
     :sobelLevel,
     :sobelAmount,
     :blurRadius,
+    :luminanceThreshold,
   ) = settings;
 
-  if (grayscaleLevel > 0) {
-    for (int i = 0; i < grayscaleAmount; i++) {
-      imageToProcess = grayscale(imageToProcess, amount: grayscaleLevel);
-    }
-  }
+  imageToProcess = imageToProcess.withBestChannelOnly(luminanceThreshold);
 
   if (blurRadius > 0) {
     imageToProcess = gaussianBlur(imageToProcess, radius: blurRadius);

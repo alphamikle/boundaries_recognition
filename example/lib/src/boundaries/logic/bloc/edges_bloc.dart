@@ -53,7 +53,8 @@ class EdgesBloc extends Cubit<EdgesState> {
         symmetricAngleThreshold: 0.1,
         minObjectSize: 40,
         searchMatrixSize: 3,
-        areaThreshold: 0.65,
+        areaThreshold: 0.35,
+        luminanceThreshold: 1.05,
       ),
     );
 
@@ -136,14 +137,14 @@ class EdgesBloc extends Cubit<EdgesState> {
     if (state.settings.isEmpty) {
       emit(
         state.copyWith(
-          settings: defaultSettings.toList(),
+          settings: [averageSettings],
           settingsIndex: 0,
         ),
       );
     }
     final RegExp imageRegExp = RegExp(r'(?<size>\d+x\d+)/(?<card>[a-z]+)_(?<background>[a-z]+)_(?<index>\d+)\.jpg$');
 
-    final int size = 1 == 1 ? 6 : dataset.length;
+    final int size = 1 == 0 ? 6 : dataset.length;
     final List<String> firstNthImages = dataset.getRange(0, size).toList();
 
     int i = 0;
@@ -223,7 +224,10 @@ class EdgesBloc extends Cubit<EdgesState> {
       delay: const Duration(seconds: 1),
       () async {
         for (final MapEntry(:key, :value) in state.images.entries) {
-          await _applyFiltersToImage(key, value);
+          start('Image "key"');
+          _applyFiltersToImage(key, value);
+          stop('Image "key"');
+          await Future<void>.delayed(const Duration(milliseconds: 100));
         }
 
         emit(state.copyWith(processing: false));
@@ -231,7 +235,7 @@ class EdgesBloc extends Cubit<EdgesState> {
     );
   }
 
-  Future<void> _applyFiltersToImage(String filename, ImageResult imageResult) async {
+  void _applyFiltersToImage(String filename, ImageResult imageResult) {
     final bool selected = state.selectedImages.isEmpty || state.selectedImages.contains(imageResult.name);
 
     if (selected == false) {

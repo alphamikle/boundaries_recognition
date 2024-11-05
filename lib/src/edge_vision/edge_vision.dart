@@ -3,8 +3,8 @@ import 'package:image/image.dart' as i;
 import '../tools/settings_extension.dart';
 import 'default_settings.dart';
 import 'edge_vision_functions.dart';
+import 'edge_vision_settings.dart';
 import 'edges.dart';
-import 'settings.dart';
 
 typedef OnImagePrepare = void Function(i.Image image);
 
@@ -65,7 +65,9 @@ class EdgeVision {
     bool needToIterateOverSettings = true;
 
     while (needToIterateOverSettings) {
-      print('Trying [$_settingsIndex] settings');
+      if (_settings.length == 1 || _bestSettings != null) {
+        needToIterateOverSettings = false;
+      }
 
       final EdgeVisionSettings settings = _pickSettings();
       i.Image preparedImage;
@@ -93,12 +95,7 @@ class EdgeVision {
     return results;
   }
 
-  i.Image _prepareImage({
-    required i.Image image,
-  }) {
-    final EdgeVisionSettings settings = _pickSettings();
-    return prepareImageSync(image: image, settings: settings);
-  }
+  i.Image _prepareImage({required i.Image image}) => prepareImageSync(image: image, settings: _pickSettings());
 
   void resetSettings() {
     _settingsIndex = 0;
@@ -106,6 +103,10 @@ class EdgeVision {
   }
 
   EdgeVisionSettings _pickSettings() {
+    if (_settings.length == 1) {
+      return _settings.first;
+    }
+
     return _bestSettings ?? _settings[_settingsIndex];
   }
 
