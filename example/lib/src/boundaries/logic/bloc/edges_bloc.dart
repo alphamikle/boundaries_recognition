@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as dev;
+import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:camera/camera.dart';
@@ -42,8 +43,6 @@ class EdgesBloc extends Cubit<EdgesState> {
     final List<EdgeVisionSettings> settings = [...state.settings];
     settings.add(
       EdgeVisionSettings(
-        grayscaleLevel: 1,
-        grayscaleAmount: 1,
         blurRadius: 1,
         sobelLevel: 1,
         sobelAmount: 1,
@@ -55,6 +54,7 @@ class EdgesBloc extends Cubit<EdgesState> {
         searchMatrixSize: 3,
         areaThreshold: 0.35,
         luminanceThreshold: 1.05,
+        maxImageSize: 300,
       ),
     );
 
@@ -112,8 +112,15 @@ class EdgesBloc extends Cubit<EdgesState> {
       return;
     }
 
-    final ByteData bytes = await rootBundle.load(filePath);
-    final Uint8List image = bytes.buffer.asUint8List();
+    final Uint8List image;
+
+    if (filePath.contains('assets')) {
+      final ByteData bytes = await rootBundle.load(filePath);
+      image = bytes.buffer.asUint8List();
+    } else {
+      image = await File(filePath).readAsBytes();
+    }
+
     final ImageResult imageResult = ImageResult.fromOriginalImage(
       name: filePath,
       originalImage: image,
@@ -137,14 +144,15 @@ class EdgesBloc extends Cubit<EdgesState> {
     if (state.settings.isEmpty) {
       emit(
         state.copyWith(
-          settings: [averageSettings],
+          // settings: [averageSettings],
+          settings: defaultSettings.toList(),
           settingsIndex: 0,
         ),
       );
     }
     final RegExp imageRegExp = RegExp(r'(?<size>\d+x\d+)/(?<card>[a-z]+)_(?<background>[a-z]+)_(?<index>\d+)\.jpg$');
 
-    final int size = 1 == 0 ? 6 : dataset.length;
+    final int size = 1 == 0 ? 2 : dataset.length;
     final List<String> firstNthImages = dataset.getRange(0, size).toList();
 
     int i = 0;

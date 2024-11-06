@@ -67,8 +67,6 @@ Future<void> iterateOverSettings({
   int index = 0;
   final int total = calculateIterationsAmount(initial: initial, target: target, step: step);
 
-  print('Total amount of variants: $total');
-
   for (num bwt = iBWT; bwt <= tBWT; bwt += sBWT) {
     for (num sl = iSL; sl <= tSL; sl += sSL) {
       for (num sa = iSA; sa <= tSA; sa += sSA) {
@@ -80,14 +78,13 @@ Future<void> iterateOverSettings({
               directionAngleLevel: initial.directionAngleLevel,
               skewnessThreshold: initial.skewnessThreshold,
               blackWhiteThreshold: bwt.toInt(),
-              grayscaleLevel: initial.grayscaleLevel,
-              grayscaleAmount: initial.grayscaleAmount,
               sobelLevel: sl.toDouble(),
               sobelAmount: sa.toInt(),
               blurRadius: br.toInt(),
               areaThreshold: initial.areaThreshold,
               symmetricAngleThreshold: initial.symmetricAngleThreshold,
               luminanceThreshold: lt.toDouble(),
+              maxImageSize: initial.maxImageSize,
             );
 
             await callback(settings, index, total);

@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:image/image.dart';
 import 'package:test/test.dart' as dart_test;
 
 import 'generate_test_id.dart';
@@ -12,7 +11,7 @@ void testCreator(Set<String> imageColors, Set<String> backgroundColors) {
     generateId(imageColors, backgroundColors),
     timeout: Timeout.none,
     () async {
-      final List<Image> imagesToProcess = await findImages(imageColors, backgroundColors);
+      final FoundImages imagesToProcess = await findImages(imageColors, backgroundColors);
 
       await imagesTester(
         id: generateId(imageColors, backgroundColors),

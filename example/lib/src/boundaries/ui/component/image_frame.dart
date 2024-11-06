@@ -67,6 +67,7 @@ Edges: ${result.edges}
             hasProcessedImage
                 ? Image.memory(
                     result.processedImage!,
+                    fit: BoxFit.cover,
                   )
                 : Center(
                     child: SizedBox.square(

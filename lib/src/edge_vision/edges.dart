@@ -12,6 +12,13 @@ enum YAxis {
   center,
 }
 
+enum UnrecognizedReason {
+  noCorners,
+  exceededSkewnessThreshold,
+  exceededAngleThreshold,
+  tooSmallSquare,
+}
+
 typedef Distortion = ({XAxis x, YAxis y});
 
 class Edges {
@@ -29,6 +36,7 @@ class Edges {
     required this.yMoveTo,
     required this.recognizedObjects,
     required this.square,
+    this.unrecognizedReason,
   });
 
   const Edges.empty()
@@ -44,7 +52,8 @@ class Edges {
         xMoveTo = null,
         yMoveTo = null,
         recognizedObjects = const [],
-        square = null;
+        square = null,
+        unrecognizedReason = null;
 
   final Point<int>? leftMiddle;
   final Point<int>? leftTop;
@@ -62,6 +71,7 @@ class Edges {
   final YAxis? yMoveTo;
 
   final double? square;
+  final UnrecognizedReason? unrecognizedReason;
 
   List<Point<int>> get corners => [
         leftMiddle,
@@ -91,7 +101,8 @@ class Edges {
           recognizedObjects == other.recognizedObjects &&
           xMoveTo == other.xMoveTo &&
           yMoveTo == other.yMoveTo &&
-          square == other.square;
+          square == other.square &&
+          unrecognizedReason == other.unrecognizedReason;
 
   @override
   int get hashCode =>
@@ -107,7 +118,8 @@ class Edges {
       recognizedObjects.hashCode ^
       xMoveTo.hashCode ^
       yMoveTo.hashCode ^
-      square.hashCode;
+      square.hashCode ^
+      unrecognizedReason.hashCode;
 
   @override
   String toString() {
@@ -121,11 +133,12 @@ Edges{
   rightBottom: $rightBottom,
   bottomMiddle: $bottomMiddle,
   leftBottom: $leftBottom,
-  allPoints: $allPoints,
+  allPoints: [${allPoints.length} points],
   recognizedObjects: $recognizedObjects,
   xMoveTo: $xMoveTo,
   yMoveTo: $yMoveTo,
   square: $square,
+  unrecognizedReason: $unrecognizedReason,
 }''';
   }
 
@@ -143,6 +156,7 @@ Edges{
     XAxis? xMoveTo,
     YAxis? yMoveTo,
     double? square,
+    UnrecognizedReason? unrecognizedReason,
   }) {
     return Edges(
       leftMiddle: leftMiddle ?? this.leftMiddle,
@@ -158,6 +172,7 @@ Edges{
       xMoveTo: xMoveTo ?? this.xMoveTo,
       yMoveTo: yMoveTo ?? this.yMoveTo,
       square: square ?? this.square,
+      unrecognizedReason: unrecognizedReason ?? this.unrecognizedReason,
     );
   }
 }

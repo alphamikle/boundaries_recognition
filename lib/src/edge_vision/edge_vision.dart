@@ -1,12 +1,21 @@
 import 'package:image/image.dart' as i;
 
-import '../tools/settings_extension.dart';
 import 'default_settings.dart';
 import 'edge_vision_functions.dart';
 import 'edge_vision_settings.dart';
 import 'edges.dart';
 
 typedef OnImagePrepare = void Function(i.Image image);
+
+enum EdgeVisionLogLevel {
+  all,
+  preparing,
+  recognition,
+  nothing;
+
+  bool get logRecognition => this == EdgeVisionLogLevel.all || this == EdgeVisionLogLevel.recognition;
+  bool get logPreparing => this == EdgeVisionLogLevel.all || this == EdgeVisionLogLevel.preparing;
+}
 
 enum EdgeProcessingMode {
   oneByOne,
@@ -38,6 +47,8 @@ class EdgeVision {
   int _settingsIndex = 0;
   EdgeProcessingMode _processingMode;
 
+  static EdgeVisionLogLevel logLevel = EdgeVisionLogLevel.all;
+
   void updateConfiguration({
     Set<EdgeVisionSettings>? settings,
     EdgeProcessingMode? processingMode,
@@ -61,38 +72,53 @@ class EdgeVision {
     bool isImagePrepared = false,
     OnImagePrepare? onImagePrepare,
   }) {
-    late Edges results;
-    bool needToIterateOverSettings = true;
-
-    while (needToIterateOverSettings) {
-      if (_settings.length == 1 || _bestSettings != null) {
-        needToIterateOverSettings = false;
-      }
-
-      final EdgeVisionSettings settings = _pickSettings();
-      i.Image preparedImage;
-
-      if (isImagePrepared) {
-        preparedImage = image.clone(noAnimation: true);
-      } else {
-        preparedImage = _prepareImage(image: image);
-        onImagePrepare?.call(preparedImage);
-      }
-
-      results = findImageEdgesSync(image: preparedImage, settings: settings);
-
-      if (results.corners.isEmpty) {
-        _shiftSettings();
-        if (_processingMode.isOneByOne || _bestSettings != null) {
-          needToIterateOverSettings = false;
+    if (_processingMode.isAllInOne) {
+      late Edges lastRecognizedEdges;
+      for (final EdgeVisionSettings settings in _settings) {
+        lastRecognizedEdges = _findImageEdgesWithSettings(
+          image: image,
+          settings: settings,
+          isImagePrepared: isImagePrepared,
+          onImagePrepare: onImagePrepare,
+        );
+        if (lastRecognizedEdges.corners.isNotEmpty) {
+          return lastRecognizedEdges;
         }
-      } else {
-        _bestSettings = settings;
-        needToIterateOverSettings = false;
       }
+      return lastRecognizedEdges;
+    }
+    final EdgeVisionSettings settings = _pickSettings();
+    final Edges edges = _findImageEdgesWithSettings(
+      image: image,
+      settings: settings,
+      isImagePrepared: isImagePrepared,
+      onImagePrepare: onImagePrepare,
+    );
+    if (edges.unrecognizedReason != null || edges.corners.isEmpty) {
+      _bestSettings = null;
+      _shiftSettings();
+    } else {
+      _bestSettings = settings;
+    }
+    return edges;
+  }
+
+  Edges _findImageEdgesWithSettings({
+    required i.Image image,
+    required EdgeVisionSettings settings,
+    bool isImagePrepared = false,
+    OnImagePrepare? onImagePrepare,
+  }) {
+    final i.Image preparedImage;
+
+    if (isImagePrepared) {
+      preparedImage = image;
+    } else {
+      preparedImage = _prepareImage(image: image);
+      onImagePrepare?.call(preparedImage);
     }
 
-    return results;
+    return findImageEdgesSync(image: preparedImage, settings: settings);
   }
 
   i.Image _prepareImage({required i.Image image}) => prepareImageSync(image: image, settings: _pickSettings());
@@ -116,9 +142,8 @@ class EdgeVision {
     }
 
     _settingsIndex++;
-    if (_settingsIndex >= _settings.length) {
+    if (_settingsIndex == _settings.length) {
       _settingsIndex = 0;
-      _bestSettings = _settings.average();
     }
   }
 }

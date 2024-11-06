@@ -1,12 +1,37 @@
-import 'dart:math' show Point;
+import 'dart:math' show Point, max;
 
 import 'package:image/image.dart' show Image, Pixel, gaussianBlur, sobel;
 
 import '../../edge_vision.dart';
+import '../tools/bench.dart';
 import '../tools/distortion.dart';
 import '../tools/math.dart';
 import '../tools/pixel_extensions.dart';
 import '../tools/point_extensions.dart';
+
+void _p1(String id) {
+  if (EdgeVision.logLevel.logPreparing) {
+    start('[EDGE VISION] $id');
+  }
+}
+
+void _p2(String id) {
+  if (EdgeVision.logLevel.logPreparing) {
+    stop('[EDGE VISION] $id');
+  }
+}
+
+void _f1(String id) {
+  if (EdgeVision.logLevel.logRecognition) {
+    start('[EDGE VISION] $id');
+  }
+}
+
+void _f2(String id) {
+  if (EdgeVision.logLevel.logRecognition) {
+    stop('[EDGE VISION] $id');
+  }
+}
 
 Edges findImageEdgesSync({
   required Image image,
@@ -19,10 +44,12 @@ Edges findImageEdgesSync({
     :skewnessThreshold,
     :areaThreshold,
     :symmetricAngleThreshold,
+    returnInvalidData: returnInvalid,
   ) = settings;
 
   final int width = image.width;
   final int height = image.height;
+  final bool noInvalidData = returnInvalid == false;
 
   List<Point<int>> allPoints = [];
 
@@ -83,6 +110,7 @@ Edges findImageEdgesSync({
     }
   }
 
+  _f1('Finding all points');
   for (int y = 0; y < image.height; y++) {
     for (int x = 0; x < image.width; x++) {
       final Pixel pixel = image.getPixel(x, y);
@@ -102,6 +130,7 @@ Edges findImageEdgesSync({
       }
     }
   }
+  _f2('Finding all points');
 
   bool leftTopFound = false;
   bool rightTopFound = false;
@@ -113,6 +142,7 @@ Edges findImageEdgesSync({
   Point<int> rightBottom = const Point(0, 0);
   Point<int> leftBottom = const Point(0, 0);
 
+  _f1('Finding corner points');
   for (final Point<int> point in allPoints) {
     if (point.ltSum < leftTop.ltSum) {
       leftTop = point;
@@ -131,8 +161,9 @@ Edges findImageEdgesSync({
 
   final bool cornersFound = leftTopFound && rightTopFound && rightBottomFound && leftBottomFound;
 
-  if (cornersFound == false) {
-    return const Edges.empty();
+  if (noInvalidData && cornersFound == false) {
+    _f2('Finding corner points');
+    return Edges.empty().copyWith(unrecognizedReason: UnrecognizedReason.noCorners);
   }
 
   final List<Point<int>> corners = [leftTop, rightTop, rightBottom, leftBottom]..sort((a, b) => a.x.compareTo(b.x));
@@ -143,7 +174,9 @@ Edges findImageEdgesSync({
   leftBottom = leftCorners[1];
   rightTop = rightCorners[0];
   rightBottom = rightCorners[1];
+  _f2('Finding corner points');
 
+  _f1('Calculating limits');
   final double topLength = distance(leftTop, rightTop);
   final double rightLength = distance(rightTop, rightBottom);
   final double bottomLength = distance(rightBottom, leftBottom);
@@ -159,8 +192,9 @@ Edges findImageEdgesSync({
     }
   }
 
-  if (wrongFigure) {
-    return const Edges.empty();
+  if (noInvalidData && wrongFigure) {
+    _f2('Calculating limits');
+    return Edges.empty().copyWith(unrecognizedReason: UnrecognizedReason.exceededSkewnessThreshold);
   }
 
   final double leftTopAngle = angle(leftBottom, leftTop, rightTop);
@@ -193,16 +227,18 @@ Edges findImageEdgesSync({
     return isWrongAngles;
   }
 
-  if (hasWrongAngles()) {
-    return const Edges.empty();
+  if (noInvalidData && hasWrongAngles()) {
+    _f2('Calculating limits');
+    return Edges.empty().copyWith(unrecognizedReason: UnrecognizedReason.exceededAngleThreshold);
   }
 
   final int objectSquare = square(leftTop, rightTop, rightBottom, leftBottom);
   final int imageSquare = width * height;
   final double relativeSquare = objectSquare / imageSquare;
 
-  if (relativeSquare < areaThreshold) {
-    return Edges.empty().copyWith(square: relativeSquare);
+  if (noInvalidData && relativeSquare < areaThreshold) {
+    _f2('Calculating limits');
+    return Edges.empty().copyWith(unrecognizedReason: UnrecognizedReason.tooSmallSquare);
   }
 
   final Distortion distortionLevel = distortion(
@@ -212,6 +248,8 @@ Edges findImageEdgesSync({
     bottomRight: rightBottomAngle,
     threshold: directionAngleLevel,
   );
+
+  _f2('Calculating limits');
 
   return Edges(
     leftMiddle: null,
@@ -242,22 +280,57 @@ Image prepareImageSync({
     :sobelAmount,
     :blurRadius,
     :luminanceThreshold,
+    :maxImageSize,
   ) = settings;
 
+  final int maxSize = max(image.width, image.height);
+
+  if (maxSize > maxImageSize) {
+    final double multiplier = maxImageSize / maxSize;
+    final int width = (image.width * multiplier).toInt();
+    final int height = (image.height * multiplier).toInt();
+
+    _p1('Resizing image [${image.width}x${image.height}] => [${width}x$height]');
+    imageToProcess = imageToProcess.resize(width, height, steps: 1);
+    _p2('Resizing image [${image.width}x${image.height}] => [${width}x$height]');
+  }
+
+  _p1('Selecting best channel');
   imageToProcess = imageToProcess.withBestChannelOnly(luminanceThreshold);
+  _p2('Selecting best channel');
 
   if (blurRadius > 0) {
+    _p1('Applying blur');
     imageToProcess = gaussianBlur(imageToProcess, radius: blurRadius);
+    _p2('Applying blur');
   }
 
   if (sobelLevel > 0) {
+    if (sobelAmount == 1) {
+      _p1('Applying sobel');
+    } else {
+      _p1('Applying sobel (total)');
+    }
     for (int i = 0; i < sobelAmount; i++) {
+      if (sobelAmount > 1) {
+        _p1('Applying sobel $i / $sobelAmount');
+      }
       imageToProcess = sobel(imageToProcess, amount: sobelLevel);
+      if (sobelAmount > 1) {
+        _p2('Applying sobel $i / $sobelAmount');
+      }
+    }
+    if (sobelAmount == 1) {
+      _p2('Applying sobel');
+    } else {
+      _p2('Applying sobel (total)');
     }
   }
 
   if (blackWhiteThreshold > 0 && blackWhiteThreshold < 255) {
+    _p1('Applying black/white filter');
     imageToProcess = imageToProcess.toBlackWhite(blackWhiteThreshold);
+    _p2('Applying black/white filter');
   }
 
   return imageToProcess;

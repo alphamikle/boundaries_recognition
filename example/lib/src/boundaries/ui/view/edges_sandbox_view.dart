@@ -1,15 +1,18 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../utils/colors.dart';
+import '../../../utils/navigation.dart';
 import '../../logic/bloc/edges_bloc.dart';
 import '../../logic/bloc/edges_state.dart';
 import '../../logic/model/image_result.dart';
 import '../component/image_frame.dart';
 import '../component/settings_fragment.dart';
+import 'camera_view.dart';
 
 class EdgesSandboxView extends StatefulWidget {
   const EdgesSandboxView({
@@ -23,37 +26,17 @@ class EdgesSandboxView extends StatefulWidget {
 class _EdgesSandboxViewState extends State<EdgesSandboxView> {
   final GlobalKey<ScaffoldState> key = GlobalKey();
   late final EdgesBloc edgesBloc = context.read();
-  final int startIndex = 1;
-  final int endIndex = 32;
-
-  String get small => true ? '_small' : '';
 
   Future<void> init() async {
     await edgesBloc.loadImages();
     setState(() {});
   }
 
-  // Future<void> handleImage(CameraImage cameraImage) async {
-  //   await Throttle.run(
-  //     'handle_image',
-  //     () async {
-  //       this.cameraImage = cameraImage.toImage();
-  //       orientation = cameraController?.value.deviceOrientation;
-  //       await applyFilters();
-  //     },
-  //   );
-  // }
-  //
-  // Future<void> initCamera() async {
-  //   final cameras = await availableCameras();
-  //   cameraController = CameraController(cameras[0], ResolutionPreset.low);
-  //   await cameraController?.initialize();
-  //   await cameraController?.startImageStream(handleImage);
-  //   setState(() {});
-  // }
-
   Future<void> startCamera() async {
-    // TODO(alphamikle):
+    final XFile? picture = await context.pushScreen<XFile>((BuildContext context) => CameraView());
+    if (picture != null) {
+      await edgesBloc.loadImage(picture.path);
+    }
   }
 
   Widget imageFrameBuilder(BuildContext context, int index) {
@@ -84,7 +67,7 @@ class _EdgesSandboxViewState extends State<EdgesSandboxView> {
     return Scaffold(
       key: key,
       endDrawer: Drawer(
-        width: max(500, context.query.size.width * (1 / 3)),
+        width: max(min(500, context.query.size.width * 4 / 5), context.query.size.width * (1 / 3)),
         child: Padding(
           padding: const EdgeInsets.only(left: 8, top: 8, right: 8, bottom: 8),
           child: SettingsFragment(),

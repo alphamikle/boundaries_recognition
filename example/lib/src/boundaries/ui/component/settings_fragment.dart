@@ -80,23 +80,6 @@ class SettingsFragment extends StatelessWidget {
             ),
             if (settingsSelected) ...[
               const SizedBox(height: 16),
-              SimpleSlider(
-                title: 'Grayscale Level',
-                value: state.selectedSettings!.grayscaleLevel,
-                onChanged: (double value) async => bloc.applySettings((EdgeVisionSettings settings) => settings.copyWith(grayscaleLevel: value)),
-                min: 0.0,
-                max: 8.0,
-                divisions: 8 ~/ 0.05,
-              ),
-              const SizedBox(height: 8),
-              SimpleSlider(
-                title: 'Grayscale Amount',
-                value: state.selectedSettings!.grayscaleAmount,
-                onChanged: (int value) async => bloc.applySettings((EdgeVisionSettings settings) => settings.copyWith(grayscaleAmount: value)),
-                min: 0,
-                max: 10,
-                divisions: 10,
-              ),
               const SizedBox(height: 8),
               SimpleSlider(
                 title: 'Sobel Level',

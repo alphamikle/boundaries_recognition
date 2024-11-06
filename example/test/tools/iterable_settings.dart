@@ -7,13 +7,12 @@ const EdgeVisionSettings initialSettings = EdgeVisionSettings(
   symmetricAngleThreshold: 0.1,
   skewnessThreshold: 0.15,
   blackWhiteThreshold: 1,
-  grayscaleLevel: 0.1, // Grayscale Disabled => Best Channel Enabled
-  grayscaleAmount: 0,
   sobelLevel: 0.2,
   sobelAmount: 1,
   blurRadius: 1,
   areaThreshold: 0.35,
   luminanceThreshold: 1.05,
+  maxImageSize: 400, // Do not resize during the tests
 );
 
 const EdgeVisionSettings targetSettings = EdgeVisionSettings.zero(
