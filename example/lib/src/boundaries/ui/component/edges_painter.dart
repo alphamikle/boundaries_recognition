@@ -7,12 +7,14 @@ class EdgesPainter extends StatelessWidget {
     required this.points,
     required this.width,
     required this.height,
+    required this.color,
     super.key,
   });
 
   final List<Point<int>> points;
   final int width;
   final int height;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +23,7 @@ class EdgesPainter extends StatelessWidget {
         points: points,
         width: width,
         height: height,
+        color: color,
       ),
     );
   }
@@ -31,11 +34,13 @@ class _Painter extends CustomPainter {
     required this.points,
     required this.width,
     required this.height,
+    required this.color,
   });
 
   final List<Point<int>> points;
   final int width;
   final int height;
+  final Color color;
 
   Offset pointToOffset(Point<int> point, Size size) {
     final double xM = size.width / width;
@@ -50,8 +55,8 @@ class _Painter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
-      ..color = Colors.orange
-      ..strokeWidth = 2.0
+      ..color = color
+      ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke;
 
     if (points.length < 4) {

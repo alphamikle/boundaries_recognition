@@ -12,7 +12,9 @@ Future<FoundImages> findImages(Set<String> imageColors, Set<String> backgroundCo
 
   for (final String imagePath in dataset) {
     final RegExpMatch? match = imagePathRegExp.firstMatch(imagePath);
+
     if (match == null) {
+      print('Incorrect image name or path [$imagePath]');
       continue;
     }
 
@@ -22,7 +24,14 @@ Future<FoundImages> findImages(Set<String> imageColors, Set<String> backgroundCo
     final String index = match.namedGroup('index')!;
 
     if ((imageColors.contains(card) || imageColors.isEmpty) && (backgroundColors.contains(background) || backgroundColors.isEmpty)) {
-      targetImages.add((await decodeJpgFile(join(current, imagePath)))!);
+      final String filePath = join(current, imagePath);
+      final Image? image = await decodeJpgFile(filePath);
+
+      if (image == null) {
+        throw Exception('Did not found image with path [$filePath]');
+      }
+
+      targetImages.add(image);
       names.add('${size}_${card}_${background}_$index');
     }
   }

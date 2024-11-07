@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class EdgeVisionSettings {
   const EdgeVisionSettings({
     required this.searchMatrixSize,
@@ -205,4 +207,24 @@ EdgeVisionSettings{
       returnInvalidData: returnInvalidData ?? this.returnInvalidData,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'searchMatrixSize': searchMatrixSize,
+      'minObjectSize': minObjectSize,
+      'directionAngleLevel': directionAngleLevel,
+      'symmetricAngleThreshold': symmetricAngleThreshold,
+      'skewnessThreshold': skewnessThreshold,
+      'blackWhiteThreshold': blackWhiteThreshold,
+      'sobelLevel': sobelLevel,
+      'sobelAmount': sobelAmount,
+      'blurRadius': blurRadius,
+      'areaThreshold': areaThreshold,
+      'luminanceThreshold': luminanceThreshold,
+      'maxImageSize': maxImageSize,
+      'returnInvalidData': returnInvalidData,
+    };
+  }
+
+  String toJsonString() => JsonEncoder.withIndent('  ').convert(toJson());
 }

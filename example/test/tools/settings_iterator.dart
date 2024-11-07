@@ -34,11 +34,24 @@ int calculateIterationsAmount({
   return totalSum.toInt();
 }
 
+Future<int> calculateIterationsAmountV2({
+  required EdgeVisionSettings initial,
+  required EdgeVisionSettings target,
+  required EdgeVisionSettings step,
+}) async {
+  double totalSum = 0;
+
+  await iterateOverSettings(callback: (settings, index, total) => totalSum++, initial: initial, target: target, step: step, total: 0);
+
+  return totalSum.toInt();
+}
+
 Future<void> iterateOverSettings({
   required SettingsCallback callback,
   required EdgeVisionSettings initial,
   required EdgeVisionSettings target,
   required EdgeVisionSettings step,
+  required int total,
 }) async {
   final EdgeVisionSettings(
     blackWhiteThreshold: iBWT,
@@ -65,7 +78,6 @@ Future<void> iterateOverSettings({
   ) = step;
 
   int index = 0;
-  final int total = calculateIterationsAmount(initial: initial, target: target, step: step);
 
   for (num bwt = iBWT; bwt <= tBWT; bwt += sBWT) {
     for (num sl = iSL; sl <= tSL; sl += sSL) {

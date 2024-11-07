@@ -6,7 +6,7 @@ const EdgeVisionSettings initialSettings = EdgeVisionSettings(
   directionAngleLevel: 3,
   symmetricAngleThreshold: 0.1,
   skewnessThreshold: 0.15,
-  blackWhiteThreshold: 1,
+  blackWhiteThreshold: 60,
   sobelLevel: 0.2,
   sobelAmount: 1,
   blurRadius: 1,
@@ -16,17 +16,17 @@ const EdgeVisionSettings initialSettings = EdgeVisionSettings(
 );
 
 const EdgeVisionSettings targetSettings = EdgeVisionSettings.zero(
-  blackWhiteThreshold: 254,
-  sobelLevel: 7,
-  sobelAmount: 5,
-  luminanceThreshold: 1.5,
-  blurRadius: 4,
+  blackWhiteThreshold: 180,
+  sobelLevel: 4,
+  sobelAmount: 4,
+  luminanceThreshold: 1.25,
+  blurRadius: 3,
 );
 
 const EdgeVisionSettings stepSettings = EdgeVisionSettings.zero(
-  blackWhiteThreshold: 10,
-  sobelLevel: 0.2,
+  blackWhiteThreshold: 20,
+  sobelLevel: 0.25,
   sobelAmount: 1,
-  luminanceThreshold: 0.05,
+  luminanceThreshold: 0.1,
   blurRadius: 1,
 );

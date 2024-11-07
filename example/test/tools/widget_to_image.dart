@@ -3,35 +3,59 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:image/image.dart' as i;
-import 'package:image/image.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 
-Future<i.Image> widgetToImage(Widget widget, {double pixelRatio = 1.0}) async {
+/// Captures the given widget as an image and returns it as an `img.Image` (from the `image` package).
+/// This method builds the widget, captures it as a `ui.Image`, and then converts it to `img.Image`.
+Future<img.Image> widgetToImage({
+  required WidgetTester tester,
+  required Widget widget,
+  double pixelRatio = 1.0,
+}) async {
+  // Create a GlobalKey for the RepaintBoundary
   final GlobalKey repaintBoundaryKey = GlobalKey();
 
-  final RepaintBoundary widgetWithBoundary = RepaintBoundary(
-    key: repaintBoundaryKey,
-    child: MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: widget,
+  print('Before pumping');
+
+  // Wrap the widget in a RepaintBoundary and build it in a MaterialApp
+  await tester.pumpWidget(
+    SizedBox(
+      height: 1000,
+      width: 3000,
+      child: MaterialApp(
+        home: Scaffold(
+          body: RepaintBoundary(
+            key: repaintBoundaryKey,
+            child: widget,
+          ),
         ),
       ),
     ),
   );
 
-  final RenderRepaintBoundary boundary = await _renderBoundary(widgetWithBoundary, repaintBoundaryKey);
+  print('Pumped');
 
+  // Wait for the widget to be fully rendered
+  await tester.pumpAndSettle();
+
+  print('Settled');
+
+  // Retrieve the RenderRepaintBoundary from the context
+  final RenderRepaintBoundary boundary = repaintBoundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
+  // Capture the widget as a ui.Image
   final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
-  final Uint8List bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
 
-  return decodePng(bytes)!;
-}
+  print('Converted to image');
 
-Future<RenderRepaintBoundary> _renderBoundary(Widget widget, GlobalKey boundaryKey) async {
-  final WidgetsBinding binding = WidgetsFlutterBinding.ensureInitialized();
-  // binding.renderViews.first.attach(binding.rootPipelineOwner);
-  binding.scheduleFrame();
-  await binding.endOfFrame;
-  return boundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+  // Convert ui.Image to PNG bytes
+  final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+  final Uint8List bytes = byteData!.buffer.asUint8List();
+
+  print('Got bytes [${bytes.length}] from image');
+
+  // Decode the PNG bytes to an image from the `image` package
+  return img.decodePng(bytes)!;
 }

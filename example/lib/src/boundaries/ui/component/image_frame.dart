@@ -8,6 +8,7 @@ import '../../logic/bloc/edges_bloc.dart';
 import '../../logic/bloc/edges_state.dart';
 import '../../logic/model/image_result.dart';
 import 'edges_painter.dart';
+import 'simple_image_frame.dart';
 
 class ImageFrame extends StatelessWidget {
   const ImageFrame({
@@ -27,6 +28,10 @@ Image ${result.name}:
 Edges: ${result.edges}
 ''');
     context.read<EdgesBloc>().toggleImageSelection(result.name);
+  }
+
+  Future<void> showLargePreview(BuildContext context) async {
+    await showDialog<void>(context: context, builder: (BuildContext context) => SimpleImageFrame(result: result));
   }
 
   bool get hasEdges {
@@ -49,6 +54,7 @@ Edges: ${result.edges}
               points: state.dotsCloudOn ? result.edges!.allPoints : result.edges!.corners,
               width: result.processedImageWidth!,
               height: result.processedImageHeight!,
+              color: Colors.red,
             ),
           )
         : null;
@@ -116,7 +122,7 @@ Edges: ${result.edges}
               child: Material(
                 type: MaterialType.transparency,
                 child: InkWell(
-                  onTap: () => toggleImageSelection(context),
+                  onTap: () async => showLargePreview(context),
                 ),
               ),
             ),

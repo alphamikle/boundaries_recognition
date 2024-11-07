@@ -235,8 +235,9 @@ Edges findImageEdgesSync({
   final int objectSquare = square(leftTop, rightTop, rightBottom, leftBottom);
   final int imageSquare = width * height;
   final double relativeSquare = objectSquare / imageSquare;
+  const double maxSquare = 0.85;
 
-  if (noInvalidData && relativeSquare < areaThreshold) {
+  if (noInvalidData && (relativeSquare < areaThreshold || relativeSquare > maxSquare)) {
     _f2('Calculating limits');
     return Edges.empty().copyWith(unrecognizedReason: UnrecognizedReason.tooSmallSquare);
   }

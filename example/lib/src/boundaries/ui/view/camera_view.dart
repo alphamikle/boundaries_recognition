@@ -112,6 +112,7 @@ class _CameraViewState extends State<CameraView> {
               points: points,
               width: imageWidth,
               height: imageHeight,
+              color: Colors.red,
             ),
         ],
       ),

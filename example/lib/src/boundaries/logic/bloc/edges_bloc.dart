@@ -144,7 +144,6 @@ class EdgesBloc extends Cubit<EdgesState> {
     if (state.settings.isEmpty) {
       emit(
         state.copyWith(
-          // settings: [averageSettings],
           settings: defaultSettings.toList(),
           settingsIndex: 0,
         ),
@@ -152,7 +151,7 @@ class EdgesBloc extends Cubit<EdgesState> {
     }
     final RegExp imageRegExp = RegExp(r'(?<size>\d+x\d+)/(?<card>[a-z]+)_(?<background>[a-z]+)_(?<index>\d+)\.jpg$');
 
-    final int size = 1 == 0 ? 2 : dataset.length;
+    final int size = 1 == 1 ? 4 : dataset.length;
     final List<String> firstNthImages = dataset.getRange(0, size).toList();
 
     int i = 0;
