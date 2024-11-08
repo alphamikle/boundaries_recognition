@@ -23,46 +23,63 @@ typedef Distortion = ({XAxis x, YAxis y});
 
 class Edges {
   const Edges({
-    required this.leftMiddle,
     required this.leftTop,
-    required this.topMiddle,
     required this.rightTop,
-    required this.rightMiddle,
     required this.rightBottom,
-    required this.bottomMiddle,
     required this.leftBottom,
+    required this.leftLength,
+    required this.topLength,
+    required this.rightLength,
+    required this.bottomLength,
+    required this.leftTopAngle,
+    required this.rightTopAngle,
+    required this.rightBottomAngle,
+    required this.leftBottomAngle,
     required this.allPoints,
+    required this.recognizedObjects,
     required this.xMoveTo,
     required this.yMoveTo,
-    required this.recognizedObjects,
+    required this.relativeSquare,
     required this.square,
     this.unrecognizedReason,
   });
 
   const Edges.empty()
-      : leftMiddle = null,
-        leftTop = null,
-        topMiddle = null,
+      : leftTop = null,
         rightTop = null,
-        rightMiddle = null,
         rightBottom = null,
-        bottomMiddle = null,
         leftBottom = null,
+        leftLength = null,
+        topLength = null,
+        rightLength = null,
+        bottomLength = null,
+        leftTopAngle = null,
+        rightTopAngle = null,
+        rightBottomAngle = null,
+        leftBottomAngle = null,
         allPoints = const [],
+        recognizedObjects = const [],
         xMoveTo = null,
         yMoveTo = null,
-        recognizedObjects = const [],
+        relativeSquare = null,
         square = null,
         unrecognizedReason = null;
 
-  final Point<int>? leftMiddle;
+  /// Corners
   final Point<int>? leftTop;
-  final Point<int>? topMiddle;
   final Point<int>? rightTop;
-  final Point<int>? rightMiddle;
   final Point<int>? rightBottom;
-  final Point<int>? bottomMiddle;
   final Point<int>? leftBottom;
+
+  final double? leftLength;
+  final double? topLength;
+  final double? rightLength;
+  final double? bottomLength;
+
+  final double? leftTopAngle;
+  final double? rightTopAngle;
+  final double? rightBottomAngle;
+  final double? leftBottomAngle;
 
   final List<Point<int>> allPoints;
   final List<int> recognizedObjects;
@@ -70,109 +87,137 @@ class Edges {
   final XAxis? xMoveTo;
   final YAxis? yMoveTo;
 
-  final double? square;
+  final double? relativeSquare;
+  final int? square;
   final UnrecognizedReason? unrecognizedReason;
 
   List<Point<int>> get corners => [
-        leftMiddle,
         leftTop,
-        topMiddle,
         rightTop,
-        rightMiddle,
         rightBottom,
-        bottomMiddle,
         leftBottom,
       ].nonNulls.toList();
+
+  Edges copyWith({
+    Point<int>? leftTop,
+    Point<int>? rightTop,
+    Point<int>? rightBottom,
+    Point<int>? leftBottom,
+    double? leftLength,
+    double? topLength,
+    double? rightLength,
+    double? bottomLength,
+    double? leftTopAngle,
+    double? rightTopAngle,
+    double? rightBottomAngle,
+    double? leftBottomAngle,
+    List<Point<int>>? allPoints,
+    List<int>? recognizedObjects,
+    XAxis? xMoveTo,
+    YAxis? yMoveTo,
+    double? relativeSquare,
+    int? square,
+    UnrecognizedReason? unrecognizedReason,
+  }) {
+    return Edges(
+      leftTop: leftTop ?? this.leftTop,
+      rightTop: rightTop ?? this.rightTop,
+      rightBottom: rightBottom ?? this.rightBottom,
+      leftBottom: leftBottom ?? this.leftBottom,
+      leftLength: leftLength ?? this.leftLength,
+      topLength: topLength ?? this.topLength,
+      rightLength: rightLength ?? this.rightLength,
+      bottomLength: bottomLength ?? this.bottomLength,
+      leftTopAngle: leftTopAngle ?? this.leftTopAngle,
+      rightTopAngle: rightTopAngle ?? this.rightTopAngle,
+      rightBottomAngle: rightBottomAngle ?? this.rightBottomAngle,
+      leftBottomAngle: leftBottomAngle ?? this.leftBottomAngle,
+      allPoints: allPoints ?? this.allPoints,
+      recognizedObjects: recognizedObjects ?? this.recognizedObjects,
+      xMoveTo: xMoveTo ?? this.xMoveTo,
+      yMoveTo: yMoveTo ?? this.yMoveTo,
+      relativeSquare: relativeSquare ?? this.relativeSquare,
+      square: square ?? this.square,
+      unrecognizedReason: unrecognizedReason ?? this.unrecognizedReason,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is Edges &&
           runtimeType == other.runtimeType &&
-          leftMiddle == other.leftMiddle &&
           leftTop == other.leftTop &&
-          topMiddle == other.topMiddle &&
           rightTop == other.rightTop &&
-          rightMiddle == other.rightMiddle &&
           rightBottom == other.rightBottom &&
-          bottomMiddle == other.bottomMiddle &&
           leftBottom == other.leftBottom &&
+          leftLength == other.leftLength &&
+          topLength == other.topLength &&
+          rightLength == other.rightLength &&
+          bottomLength == other.bottomLength &&
+          leftTopAngle == other.leftTopAngle &&
+          rightTopAngle == other.rightTopAngle &&
+          rightBottomAngle == other.rightBottomAngle &&
+          leftBottomAngle == other.leftBottomAngle &&
           allPoints == other.allPoints &&
           recognizedObjects == other.recognizedObjects &&
           xMoveTo == other.xMoveTo &&
           yMoveTo == other.yMoveTo &&
+          relativeSquare == other.relativeSquare &&
           square == other.square &&
           unrecognizedReason == other.unrecognizedReason;
 
   @override
   int get hashCode =>
-      leftMiddle.hashCode ^
       leftTop.hashCode ^
-      topMiddle.hashCode ^
       rightTop.hashCode ^
-      rightMiddle.hashCode ^
       rightBottom.hashCode ^
-      bottomMiddle.hashCode ^
       leftBottom.hashCode ^
+      leftLength.hashCode ^
+      topLength.hashCode ^
+      rightLength.hashCode ^
+      bottomLength.hashCode ^
+      leftTopAngle.hashCode ^
+      rightTopAngle.hashCode ^
+      rightBottomAngle.hashCode ^
+      leftBottomAngle.hashCode ^
       allPoints.hashCode ^
       recognizedObjects.hashCode ^
       xMoveTo.hashCode ^
       yMoveTo.hashCode ^
+      relativeSquare.hashCode ^
       square.hashCode ^
       unrecognizedReason.hashCode;
 
-  @override
-  String toString() {
-    return '''
-Edges{
-  leftMiddle: $leftMiddle,
-  leftTop: $leftTop,
-  topMiddle: $topMiddle,
-  rightTop: $rightTop,
-  rightMiddle: $rightMiddle,
-  rightBottom: $rightBottom,
-  bottomMiddle: $bottomMiddle,
-  leftBottom: $leftBottom,
-  allPoints: [${allPoints.length} points],
-  recognizedObjects: $recognizedObjects,
-  xMoveTo: $xMoveTo,
-  yMoveTo: $yMoveTo,
-  square: $square,
-  unrecognizedReason: $unrecognizedReason,
-}''';
+  Map<String, dynamic> toJson() {
+    return {
+      'leftTop': leftTop?.toJson(),
+      'rightTop': rightTop?.toJson(),
+      'rightBottom': rightBottom?.toJson(),
+      'leftBottom': leftBottom?.toJson(),
+      'leftLength': leftLength,
+      'topLength': topLength,
+      'rightLength': rightLength,
+      'bottomLength': bottomLength,
+      'leftTopAngle': leftTopAngle,
+      'rightTopAngle': rightTopAngle,
+      'rightBottomAngle': rightBottomAngle,
+      'leftBottomAngle': leftBottomAngle,
+      'recognizedObjects': recognizedObjects,
+      'xMoveTo': xMoveTo?.toString(),
+      'yMoveTo': yMoveTo?.toString(),
+      'relativeSquare': relativeSquare,
+      'square': square,
+      'unrecognizedReason': unrecognizedReason?.toString(),
+    };
   }
+}
 
-  Edges copyWith({
-    Point<int>? leftMiddle,
-    Point<int>? leftTop,
-    Point<int>? topMiddle,
-    Point<int>? rightTop,
-    Point<int>? rightMiddle,
-    Point<int>? rightBottom,
-    Point<int>? bottomMiddle,
-    Point<int>? leftBottom,
-    List<Point<int>>? allPoints,
-    List<int>? recognizedObjects,
-    XAxis? xMoveTo,
-    YAxis? yMoveTo,
-    double? square,
-    UnrecognizedReason? unrecognizedReason,
-  }) {
-    return Edges(
-      leftMiddle: leftMiddle ?? this.leftMiddle,
-      leftTop: leftTop ?? this.leftTop,
-      topMiddle: topMiddle ?? this.topMiddle,
-      rightTop: rightTop ?? this.rightTop,
-      rightMiddle: rightMiddle ?? this.rightMiddle,
-      rightBottom: rightBottom ?? this.rightBottom,
-      bottomMiddle: bottomMiddle ?? this.bottomMiddle,
-      leftBottom: leftBottom ?? this.leftBottom,
-      allPoints: allPoints ?? this.allPoints,
-      recognizedObjects: recognizedObjects ?? this.recognizedObjects,
-      xMoveTo: xMoveTo ?? this.xMoveTo,
-      yMoveTo: yMoveTo ?? this.yMoveTo,
-      square: square ?? this.square,
-      unrecognizedReason: unrecognizedReason ?? this.unrecognizedReason,
-    );
+extension _JsonablePointInt on Point<int> {
+  Map<String, int> toJson() {
+    return {
+      'x': x,
+      'y': y,
+    };
   }
 }

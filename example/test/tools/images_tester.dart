@@ -12,22 +12,27 @@ import 'images_finder.dart';
 import 'save_image_as_file.dart';
 import 'save_json_as_file.dart';
 import 'screenshot.dart';
-import 'settings_iterator.dart';
+import 'settings/settings_iterator.dart';
 
 typedef Score = (int maxSucceededImages, int totalImages, EdgeVisionSettings bestSettings);
 
 Future<void> imagesTester({
   required String id,
-  required FoundImages imagesToProcess,
   required EdgeVisionSettings initial,
   required EdgeVisionSettings target,
   required EdgeVisionSettings step,
   required WidgetTester tester,
+  FoundImages? imagesToProcess,
+  FoundImage? imageToProcess,
 }) async {
+  if (imagesToProcess == null && imageToProcess == null) {
+    throw ArgumentError('imagesToProcess or either imageToProcess should not be a null');
+  }
+
   int maxSucceededImages = 0;
 
-  final List<Image> images = imagesToProcess.$1;
-  final List<String> names = imagesToProcess.$2;
+  final List<Image> images = imagesToProcess?.$1 ?? [imageToProcess!.$1];
+  final List<String> names = imagesToProcess?.$2 ?? [imageToProcess!.$2];
 
   final int totalImages = images.length;
   EdgeVisionSettings? bestSettings;

@@ -197,6 +197,7 @@ Edges findImageEdgesSync({
     return Edges.empty().copyWith(unrecognizedReason: UnrecognizedReason.exceededSkewnessThreshold);
   }
 
+  // TODO(alphamikle): Incorrect angles
   final double leftTopAngle = angle(leftBottom, leftTop, rightTop);
   final double rightTopAngle = angle(leftTop, rightTop, rightBottom);
   final double rightBottomAngle = angle(rightTop, rightBottom, leftBottom);
@@ -235,7 +236,7 @@ Edges findImageEdgesSync({
   final int objectSquare = square(leftTop, rightTop, rightBottom, leftBottom);
   final int imageSquare = width * height;
   final double relativeSquare = objectSquare / imageSquare;
-  const double maxSquare = 0.85;
+  const double maxSquare = 1;
 
   if (noInvalidData && (relativeSquare < areaThreshold || relativeSquare > maxSquare)) {
     _f2('Calculating limits');
@@ -253,19 +254,24 @@ Edges findImageEdgesSync({
   _f2('Calculating limits');
 
   return Edges(
-    leftMiddle: null,
     leftTop: leftTop,
-    topMiddle: null,
     rightTop: rightTop,
-    rightMiddle: null,
     rightBottom: rightBottom,
-    bottomMiddle: null,
     leftBottom: leftBottom,
+    leftLength: leftLength,
+    topLength: topLength,
+    rightLength: rightLength,
+    bottomLength: bottomLength,
+    leftTopAngle: leftTopAngle,
+    rightTopAngle: rightTopAngle,
+    rightBottomAngle: rightBottomAngle,
+    leftBottomAngle: leftBottomAngle,
+    relativeSquare: relativeSquare,
+    square: objectSquare,
     allPoints: allPoints,
     xMoveTo: distortionLevel.x,
     yMoveTo: distortionLevel.y,
     recognizedObjects: recognizedObjects,
-    square: relativeSquare,
   );
 }
 

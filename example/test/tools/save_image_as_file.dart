@@ -11,7 +11,7 @@ Future<void> saveImageAsFile(img.Image image, String filePath) async {
     await directory.create(recursive: true);
   }
 
-  final Uint8List bytes = img.encodeJpg(image);
+  final Uint8List bytes = img.encodeJpg(image, quality: 40);
 
   await file.writeAsBytes(bytes);
 }

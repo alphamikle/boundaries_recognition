@@ -11,6 +11,7 @@ import 'package:image/image.dart';
 import '../../../utils/bench.dart';
 import '../../../utils/dataset.dart';
 import '../../../utils/debouncer.dart';
+import '../../../utils/image_params_extractor.dart';
 import '../../../utils/sleep.dart';
 import '../../../utils/types.dart';
 import '../model/image_result.dart';
@@ -149,8 +150,6 @@ class EdgesBloc extends Cubit<EdgesState> {
         ),
       );
     }
-    final RegExp imageRegExp = RegExp(r'(?<size>\d+x\d+)/(?<card>[a-z]+)_(?<background>[a-z]+)_(?<index>\d+)\.jpg$');
-
     final int size = 1 == 1 ? 4 : dataset.length;
     final List<String> firstNthImages = dataset.getRange(0, size).toList();
 
@@ -162,16 +161,13 @@ class EdgesBloc extends Cubit<EdgesState> {
     for (final String image in firstNthImages) {
       i++;
 
-      final RegExpMatch? match = imageRegExp.firstMatch(image);
-      if (match == null) {
-        dev.log('Image $image has wrong name');
-        continue;
-      }
+      final ImageParams imageParams = extractImageParams(image);
+
       final TestImage testImage = TestImage(
-        index: int.parse(match.namedGroup('index')!),
-        size: match.namedGroup('size')!,
-        card: match.namedGroup('card')!,
-        background: match.namedGroup('background')!,
+        index: int.parse(imageParams.index),
+        size: imageParams.size,
+        card: imageParams.card,
+        background: imageParams.background,
         fullPath: image,
       );
 

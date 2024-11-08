@@ -2,8 +2,8 @@ import 'dart:math';
 
 /// Calculates angle between two lines by three points
 double angle(Point<num> start, Point<num> intersection, Point<num> end) {
-  final Point<num> ab = Point(intersection.x - start.x, intersection.y - start.y);
-  final Point<num> bc = Point(end.x - intersection.x, end.y - intersection.y);
+  final Point<num> ab = Point(start.x - intersection.x, start.y - intersection.y);
+  final Point<num> bc = Point(intersection.x - end.x, intersection.y - end.y);
 
   final num dotProduct = ab.x * bc.x + ab.y * bc.y;
 
