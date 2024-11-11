@@ -1,5 +1,15 @@
 import 'dart:math';
 
+import 'package:autoequal/autoequal.dart';
+import 'package:copy_with_extension/copy_with_extension.dart';
+import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
+
+import '../tools/point_extensions.dart';
+import '../tools/types.dart';
+
+part 'edges.g.dart';
+
 enum XAxis {
   left,
   right,
@@ -21,7 +31,12 @@ enum UnrecognizedReason {
 
 typedef Distortion = ({XAxis x, YAxis y});
 
-class Edges {
+typedef ImageSize = ({int width, int height});
+
+@autoequal
+@CopyWith()
+@JsonSerializable()
+class Edges extends Equatable {
   const Edges({
     required this.leftTop,
     required this.rightTop,
@@ -41,8 +56,12 @@ class Edges {
     required this.yMoveTo,
     required this.relativeSquare,
     required this.square,
+    required this.originalImageSize,
+    required this.resizedImageSize,
     this.unrecognizedReason,
   });
+
+  factory Edges.fromJson(Json json) => _$EdgesFromJson(json);
 
   const Edges.empty()
       : leftTop = null,
@@ -63,12 +82,20 @@ class Edges {
         yMoveTo = null,
         relativeSquare = null,
         square = null,
-        unrecognizedReason = null;
+        unrecognizedReason = null,
+        originalImageSize = null,
+        resizedImageSize = null;
 
-  /// Corners
+  @JsonKey(fromJson: pointIntOrNullFromJson, toJson: pointIntToJsonOrNull)
   final Point<int>? leftTop;
+
+  @JsonKey(fromJson: pointIntOrNullFromJson, toJson: pointIntToJsonOrNull)
   final Point<int>? rightTop;
+
+  @JsonKey(fromJson: pointIntOrNullFromJson, toJson: pointIntToJsonOrNull)
   final Point<int>? rightBottom;
+
+  @JsonKey(fromJson: pointIntOrNullFromJson, toJson: pointIntToJsonOrNull)
   final Point<int>? leftBottom;
 
   final double? leftLength;
@@ -81,7 +108,9 @@ class Edges {
   final double? rightBottomAngle;
   final double? leftBottomAngle;
 
+  @JsonKey(fromJson: jsonListToListOfPointInt, toJson: listOfPointIntToJsonList)
   final List<Point<int>> allPoints;
+
   final List<int> recognizedObjects;
 
   final XAxis? xMoveTo;
@@ -91,6 +120,9 @@ class Edges {
   final int? square;
   final UnrecognizedReason? unrecognizedReason;
 
+  final ImageSize? originalImageSize;
+  final ImageSize? resizedImageSize;
+
   List<Point<int>> get corners => [
         leftTop,
         rightTop,
@@ -98,126 +130,8 @@ class Edges {
         leftBottom,
       ].nonNulls.toList();
 
-  Edges copyWith({
-    Point<int>? leftTop,
-    Point<int>? rightTop,
-    Point<int>? rightBottom,
-    Point<int>? leftBottom,
-    double? leftLength,
-    double? topLength,
-    double? rightLength,
-    double? bottomLength,
-    double? leftTopAngle,
-    double? rightTopAngle,
-    double? rightBottomAngle,
-    double? leftBottomAngle,
-    List<Point<int>>? allPoints,
-    List<int>? recognizedObjects,
-    XAxis? xMoveTo,
-    YAxis? yMoveTo,
-    double? relativeSquare,
-    int? square,
-    UnrecognizedReason? unrecognizedReason,
-  }) {
-    return Edges(
-      leftTop: leftTop ?? this.leftTop,
-      rightTop: rightTop ?? this.rightTop,
-      rightBottom: rightBottom ?? this.rightBottom,
-      leftBottom: leftBottom ?? this.leftBottom,
-      leftLength: leftLength ?? this.leftLength,
-      topLength: topLength ?? this.topLength,
-      rightLength: rightLength ?? this.rightLength,
-      bottomLength: bottomLength ?? this.bottomLength,
-      leftTopAngle: leftTopAngle ?? this.leftTopAngle,
-      rightTopAngle: rightTopAngle ?? this.rightTopAngle,
-      rightBottomAngle: rightBottomAngle ?? this.rightBottomAngle,
-      leftBottomAngle: leftBottomAngle ?? this.leftBottomAngle,
-      allPoints: allPoints ?? this.allPoints,
-      recognizedObjects: recognizedObjects ?? this.recognizedObjects,
-      xMoveTo: xMoveTo ?? this.xMoveTo,
-      yMoveTo: yMoveTo ?? this.yMoveTo,
-      relativeSquare: relativeSquare ?? this.relativeSquare,
-      square: square ?? this.square,
-      unrecognizedReason: unrecognizedReason ?? this.unrecognizedReason,
-    );
-  }
-
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Edges &&
-          runtimeType == other.runtimeType &&
-          leftTop == other.leftTop &&
-          rightTop == other.rightTop &&
-          rightBottom == other.rightBottom &&
-          leftBottom == other.leftBottom &&
-          leftLength == other.leftLength &&
-          topLength == other.topLength &&
-          rightLength == other.rightLength &&
-          bottomLength == other.bottomLength &&
-          leftTopAngle == other.leftTopAngle &&
-          rightTopAngle == other.rightTopAngle &&
-          rightBottomAngle == other.rightBottomAngle &&
-          leftBottomAngle == other.leftBottomAngle &&
-          allPoints == other.allPoints &&
-          recognizedObjects == other.recognizedObjects &&
-          xMoveTo == other.xMoveTo &&
-          yMoveTo == other.yMoveTo &&
-          relativeSquare == other.relativeSquare &&
-          square == other.square &&
-          unrecognizedReason == other.unrecognizedReason;
+  List<Object?> get props => _$props;
 
-  @override
-  int get hashCode =>
-      leftTop.hashCode ^
-      rightTop.hashCode ^
-      rightBottom.hashCode ^
-      leftBottom.hashCode ^
-      leftLength.hashCode ^
-      topLength.hashCode ^
-      rightLength.hashCode ^
-      bottomLength.hashCode ^
-      leftTopAngle.hashCode ^
-      rightTopAngle.hashCode ^
-      rightBottomAngle.hashCode ^
-      leftBottomAngle.hashCode ^
-      allPoints.hashCode ^
-      recognizedObjects.hashCode ^
-      xMoveTo.hashCode ^
-      yMoveTo.hashCode ^
-      relativeSquare.hashCode ^
-      square.hashCode ^
-      unrecognizedReason.hashCode;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'leftTop': leftTop?.toJson(),
-      'rightTop': rightTop?.toJson(),
-      'rightBottom': rightBottom?.toJson(),
-      'leftBottom': leftBottom?.toJson(),
-      'leftLength': leftLength,
-      'topLength': topLength,
-      'rightLength': rightLength,
-      'bottomLength': bottomLength,
-      'leftTopAngle': leftTopAngle,
-      'rightTopAngle': rightTopAngle,
-      'rightBottomAngle': rightBottomAngle,
-      'leftBottomAngle': leftBottomAngle,
-      'recognizedObjects': recognizedObjects,
-      'xMoveTo': xMoveTo?.toString(),
-      'yMoveTo': yMoveTo?.toString(),
-      'relativeSquare': relativeSquare,
-      'square': square,
-      'unrecognizedReason': unrecognizedReason?.toString(),
-    };
-  }
-}
-
-extension _JsonablePointInt on Point<int> {
-  Map<String, int> toJson() {
-    return {
-      'x': x,
-      'y': y,
-    };
-  }
+  Json toJson() => _$EdgesToJson(this);
 }

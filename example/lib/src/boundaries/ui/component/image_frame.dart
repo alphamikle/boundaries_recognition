@@ -52,8 +52,8 @@ Edges: ${result.edges}
         ? Positioned.fill(
             child: EdgesPainter(
               points: state.dotsCloudOn ? result.edges!.allPoints : result.edges!.corners,
-              width: result.processedImageWidth!,
-              height: result.processedImageHeight!,
+              width: result.originalImageWidth,
+              height: result.originalImageHeight,
               color: Colors.red,
             ),
           )
@@ -87,6 +87,7 @@ Edges: ${result.edges}
                 opacity: state.opacity,
                 child: Image.memory(
                   result.originalImage,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),

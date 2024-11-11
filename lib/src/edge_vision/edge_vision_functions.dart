@@ -1,11 +1,10 @@
 import 'dart:math' show Point, max;
 
-import 'package:image/image.dart' show Image, Pixel, gaussianBlur, sobel;
+import 'package:image/image.dart' show Image, Pixel, gaussianBlur, grayscale, sobel;
 
 import '../../edge_vision.dart';
 import '../tools/bench.dart';
 import '../tools/distortion.dart';
-import '../tools/math.dart';
 import '../tools/pixel_extensions.dart';
 import '../tools/point_extensions.dart';
 
@@ -36,6 +35,8 @@ void _f2(String id) {
 Edges findImageEdgesSync({
   required Image image,
   required EdgeVisionSettings settings,
+  required int originalImageWidth,
+  required int originalImageHeight,
 }) {
   final EdgeVisionSettings(
     :searchMatrixSize,
@@ -253,7 +254,7 @@ Edges findImageEdgesSync({
 
   _f2('Calculating limits');
 
-  return Edges(
+  final Edges edges = Edges(
     leftTop: leftTop,
     rightTop: rightTop,
     rightBottom: rightBottom,
@@ -272,7 +273,10 @@ Edges findImageEdgesSync({
     xMoveTo: distortionLevel.x,
     yMoveTo: distortionLevel.y,
     recognizedObjects: recognizedObjects,
+    resizedImageSize: (width: width, height: height),
+    originalImageSize: (width: originalImageWidth, height: originalImageHeight),
   );
+  return edges.scaleTo(originalImageWidth, originalImageHeight, width, height);
 }
 
 Image prepareImageSync({
@@ -288,6 +292,8 @@ Image prepareImageSync({
     :blurRadius,
     :luminanceThreshold,
     :maxImageSize,
+    :grayscaleLevel,
+    :grayscaleAmount,
   ) = settings;
 
   final int maxSize = max(image.width, image.height);
@@ -302,9 +308,33 @@ Image prepareImageSync({
     _p2('Resizing image [${image.width}x${image.height}] => [${width}x$height]');
   }
 
-  _p1('Selecting best channel');
-  imageToProcess = imageToProcess.withBestChannelOnly(luminanceThreshold);
-  _p2('Selecting best channel');
+  if (grayscaleAmount > 0) {
+    if (grayscaleAmount == 1) {
+      _p1('Applying grayscale');
+    } else {
+      _p1('Applying grayscale (total)');
+    }
+
+    for (int i = 0; i < grayscaleAmount; i++) {
+      if (grayscaleAmount > 1) {
+        _p1('Applying grayscale $i / $grayscaleAmount');
+      }
+      imageToProcess = grayscale(imageToProcess, amount: grayscaleLevel);
+      if (sobelAmount > 1) {
+        _p2('Applying grayscale $i / $grayscaleAmount');
+      }
+    }
+
+    if (sobelAmount == 1) {
+      _p2('Applying grayscale');
+    } else {
+      _p2('Applying grayscale (total)');
+    }
+  } else {
+    _p1('Selecting best channel');
+    imageToProcess = imageToProcess.withBestChannelOnly(luminanceThreshold);
+    _p2('Selecting best channel');
+  }
 
   if (blurRadius > 0) {
     _p1('Applying blur');
@@ -341,4 +371,44 @@ Image prepareImageSync({
   }
 
   return imageToProcess;
+}
+
+extension _ScalableEdges on Edges {
+  Edges scaleTo(int newWidth, int newHeight, int originalWidth, int originalHeight) {
+    final double scaleX = newWidth / originalWidth;
+    final double scaleY = newHeight / originalHeight;
+
+    Point<int>? scalePoint(Point<int>? point) {
+      if (point == null) return null;
+      return Point<int>((point.x * scaleX).round(), (point.y * scaleY).round());
+    }
+
+    double? scaleLength(double? length, double scale) {
+      return length != null ? length * scale : null;
+    }
+
+    return Edges(
+      leftTop: scalePoint(leftTop),
+      rightTop: scalePoint(rightTop),
+      rightBottom: scalePoint(rightBottom),
+      leftBottom: scalePoint(leftBottom),
+      leftLength: scaleLength(leftLength, scaleY),
+      topLength: scaleLength(topLength, scaleX),
+      rightLength: scaleLength(rightLength, scaleY),
+      bottomLength: scaleLength(bottomLength, scaleX),
+      leftTopAngle: leftTopAngle,
+      rightTopAngle: rightTopAngle,
+      rightBottomAngle: rightBottomAngle,
+      leftBottomAngle: leftBottomAngle,
+      square: this.square != null ? (this.square! * scaleX * scaleY).round() : null,
+      relativeSquare: relativeSquare,
+      allPoints: allPoints.map(scalePoint).whereType<Point<int>>().toList(),
+      recognizedObjects: recognizedObjects,
+      xMoveTo: xMoveTo,
+      yMoveTo: yMoveTo,
+      unrecognizedReason: unrecognizedReason,
+      originalImageSize: originalImageSize,
+      resizedImageSize: resizedImageSize,
+    );
+  }
 }

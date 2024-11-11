@@ -13,6 +13,8 @@ extension _$ImageResultAutoequal on ImageResult {
         decodedImage,
         processedImage,
         edges,
+        originalImageWidth,
+        originalImageHeight,
         processedImageWidth,
         processedImageHeight,
       ];
@@ -33,6 +35,10 @@ abstract class _$ImageResultCWProxy {
 
   ImageResult edges(Edges? edges);
 
+  ImageResult originalImageWidth(int originalImageWidth);
+
+  ImageResult originalImageHeight(int originalImageHeight);
+
   ImageResult processedImageWidth(int? processedImageWidth);
 
   ImageResult processedImageHeight(int? processedImageHeight);
@@ -49,6 +55,8 @@ abstract class _$ImageResultCWProxy {
     Image? decodedImage,
     Uint8List? processedImage,
     Edges? edges,
+    int? originalImageWidth,
+    int? originalImageHeight,
     int? processedImageWidth,
     int? processedImageHeight,
   });
@@ -79,6 +87,14 @@ class _$ImageResultCWProxyImpl implements _$ImageResultCWProxy {
   ImageResult edges(Edges? edges) => this(edges: edges);
 
   @override
+  ImageResult originalImageWidth(int originalImageWidth) =>
+      this(originalImageWidth: originalImageWidth);
+
+  @override
+  ImageResult originalImageHeight(int originalImageHeight) =>
+      this(originalImageHeight: originalImageHeight);
+
+  @override
   ImageResult processedImageWidth(int? processedImageWidth) =>
       this(processedImageWidth: processedImageWidth);
 
@@ -100,6 +116,8 @@ class _$ImageResultCWProxyImpl implements _$ImageResultCWProxy {
     Object? decodedImage = const $CopyWithPlaceholder(),
     Object? processedImage = const $CopyWithPlaceholder(),
     Object? edges = const $CopyWithPlaceholder(),
+    Object? originalImageWidth = const $CopyWithPlaceholder(),
+    Object? originalImageHeight = const $CopyWithPlaceholder(),
     Object? processedImageWidth = const $CopyWithPlaceholder(),
     Object? processedImageHeight = const $CopyWithPlaceholder(),
   }) {
@@ -126,6 +144,17 @@ class _$ImageResultCWProxyImpl implements _$ImageResultCWProxy {
           ? _value.edges
           // ignore: cast_nullable_to_non_nullable
           : edges as Edges?,
+      originalImageWidth: originalImageWidth == const $CopyWithPlaceholder() ||
+              originalImageWidth == null
+          ? _value.originalImageWidth
+          // ignore: cast_nullable_to_non_nullable
+          : originalImageWidth as int,
+      originalImageHeight:
+          originalImageHeight == const $CopyWithPlaceholder() ||
+                  originalImageHeight == null
+              ? _value.originalImageHeight
+              // ignore: cast_nullable_to_non_nullable
+              : originalImageHeight as int,
       processedImageWidth: processedImageWidth == const $CopyWithPlaceholder()
           ? _value.processedImageWidth
           // ignore: cast_nullable_to_non_nullable

@@ -4,12 +4,21 @@ import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:edge_vision/edge_vision.dart';
 import 'package:flutter/material.dart' hide Image;
-import 'package:image/image.dart' show Image;
+import 'package:image/image.dart' show Image, copyRotate;
 
 import '../../../utils/bench.dart';
 import '../../../utils/camera_image_extensions.dart';
 import '../../../utils/navigation.dart';
 import '../../../utils/throttle.dart';
+import '../../logic/unique_settings/best_settings_1.dart';
+import '../../logic/unique_settings/best_settings_2.dart';
+import '../../logic/unique_settings/best_settings_3.dart';
+import '../../logic/unique_settings/best_settings_4.dart';
+import '../../logic/unique_settings/best_settings_5.dart';
+import '../../logic/unique_settings/best_settings_6.dart';
+import '../../logic/unique_settings/best_settings_7.dart';
+import '../../logic/unique_settings/best_settings_8.dart';
+import '../../logic/unique_settings/best_settings_9.dart';
 import '../component/edges_painter.dart';
 
 class CameraView extends StatefulWidget {
@@ -20,7 +29,20 @@ class CameraView extends StatefulWidget {
 }
 
 class _CameraViewState extends State<CameraView> {
-  final EdgeVision edgeVision = EdgeVision(settings: {averageSettings});
+  final EdgeVisionSettings averageBestSettings = [
+    bestSettings1,
+    bestSettings2,
+    bestSettings3,
+    bestSettings4,
+    bestSettings5,
+    bestSettings6,
+    bestSettings7,
+    bestSettings8,
+    bestSettings9,
+  ].average();
+
+  late final Future<EdgeVision> edgeVisionFuture = EdgeVision.isolated(settings: {averageSettings});
+  EdgeVision? edgeVision;
 
   bool cloud = false;
 
@@ -28,7 +50,10 @@ class _CameraViewState extends State<CameraView> {
 
   int imageWidth = 0;
   int imageHeight = 0;
+
   List<Point<int>> points = [];
+  XAxis? xMoveTo;
+  YAxis? yMoveTo;
 
   Future<void> takePicture() async {
     final NavigatorState nav = context.nav;
@@ -42,22 +67,28 @@ class _CameraViewState extends State<CameraView> {
       delay: const Duration(milliseconds: 100),
       () async {
         start('Handling image');
-        final Image image = cameraImage.toImage();
-        imageWidth = image.width;
-        imageHeight = image.height;
-        final Edges edges = edgeVision.findImageEdges(image: image);
+        final Image image = copyRotate(cameraImage.toImage(), angle: 90);
+        edgeVision ??= await edgeVisionFuture;
+        final Edges edges = await edgeVision!.findImageEdges(image: image);
+        imageWidth = edges.originalImageSize?.width ?? image.width;
+        imageHeight = edges.originalImageSize?.height ?? image.height;
+        xMoveTo = edges.xMoveTo;
+        yMoveTo = edges.yMoveTo;
         points = cloud ? edges.allPoints : edges.corners;
         stop('Handling image');
         print('Found ${points.length} points');
-        setState(() {});
+        if (mounted && context.mounted) {
+          setState(() {});
+        }
       },
     );
   }
 
   Future<void> initCamera() async {
     final List<CameraDescription> cameras = await availableCameras();
-    cameraController = CameraController(cameras[0], ResolutionPreset.low);
+    cameraController = CameraController(cameras[0], ResolutionPreset.high);
     await cameraController?.initialize();
+    await cameraController?.setZoomLevel(1.5);
     await cameraController?.startImageStream(handleImage);
     setState(() {});
   }
@@ -65,6 +96,7 @@ class _CameraViewState extends State<CameraView> {
   @override
   void initState() {
     super.initState();
+    EdgeVision.logLevel = EdgeVisionLogLevel.nothing;
     unawaited(initCamera());
   }
 
@@ -91,30 +123,64 @@ class _CameraViewState extends State<CameraView> {
           ),
         ],
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: cameraController == null
-                ? Center(
-                    child: SizedBox.square(
-                      dimension: 50,
-                      child: CircularProgressIndicator(),
+      body: Center(
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: cameraController == null
+                  ? Center(
+                      child: SizedBox.square(
+                        dimension: 50,
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : CameraPreview(
+                      cameraController!,
                     ),
-                  )
-                : CameraPreview(
-                    cameraController!,
-                  ),
-          ),
-          if (points.isNotEmpty && imageWidth > 0 && imageHeight > 0)
-            EdgesPainter(
-              points: points,
-              width: imageWidth,
-              height: imageHeight,
-              color: Colors.red,
             ),
-        ],
+            if (points.isNotEmpty && imageWidth > 0 && imageHeight > 0)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.yellow.withValues(alpha: 0.15),
+                  child: EdgesPainter(
+                    points: points,
+                    width: imageWidth,
+                    height: imageHeight,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    // ⬅️↖️↙️➡️️↗️↘️️⬇️⬆️️⏺️
+                    switch ((xMoveTo, yMoveTo)) {
+                      (XAxis.left, YAxis.top) => '↖️',
+                      (XAxis.left, YAxis.bottom) => '↙️',
+                      (XAxis.left, YAxis.center) => '⬅️',
+                      (XAxis.right, YAxis.top) => '↗️',
+                      (XAxis.right, YAxis.bottom) => '↘️️',
+                      (XAxis.right, YAxis.center) => '➡️',
+                      (XAxis.center, YAxis.top) => '⬆️',
+                      (XAxis.center, YAxis.bottom) => '⬇️',
+                      (XAxis.center, YAxis.center) => '⏺️',
+                      _ => '',
+                    },
+                    style: const TextStyle(fontSize: 30),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

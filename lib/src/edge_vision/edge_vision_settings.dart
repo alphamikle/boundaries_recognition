@@ -14,6 +14,8 @@ class EdgeVisionSettings {
     required this.areaThreshold,
     required this.luminanceThreshold,
     required this.maxImageSize,
+    required this.grayscaleLevel,
+    required this.grayscaleAmount,
     this.returnInvalidData = false,
   });
 
@@ -30,23 +32,28 @@ class EdgeVisionSettings {
     this.areaThreshold = 0,
     this.luminanceThreshold = 0,
     this.maxImageSize = 0,
+    this.grayscaleLevel = 0,
+    this.grayscaleAmount = 0,
     this.returnInvalidData = false,
   });
 
-  factory EdgeVisionSettings.fromFields(List<num> fields) {
+  factory EdgeVisionSettings.fromJson(Map<String, dynamic> map) {
     return EdgeVisionSettings(
-      searchMatrixSize: fields[0].toInt(),
-      minObjectSize: fields[1].toInt(),
-      directionAngleLevel: fields[2].toDouble(),
-      symmetricAngleThreshold: fields[3].toDouble(),
-      skewnessThreshold: fields[4].toDouble(),
-      blackWhiteThreshold: fields[5].toInt(),
-      sobelLevel: fields[6].toDouble(),
-      sobelAmount: fields[7].toInt(),
-      blurRadius: fields[8].toInt(),
-      areaThreshold: fields[9].toDouble(),
-      luminanceThreshold: fields[10].toDouble(),
-      maxImageSize: fields[11].toInt(),
+      searchMatrixSize: map['searchMatrixSize'] as int,
+      minObjectSize: map['minObjectSize'] as int,
+      directionAngleLevel: map['directionAngleLevel'] as double,
+      symmetricAngleThreshold: map['symmetricAngleThreshold'] as double,
+      skewnessThreshold: map['skewnessThreshold'] as double,
+      blackWhiteThreshold: map['blackWhiteThreshold'] as int,
+      sobelLevel: map['sobelLevel'] as double,
+      sobelAmount: map['sobelAmount'] as int,
+      blurRadius: map['blurRadius'] as int,
+      areaThreshold: map['areaThreshold'] as double,
+      luminanceThreshold: map['luminanceThreshold'] as double,
+      maxImageSize: map['maxImageSize'] as int,
+      grayscaleLevel: map['grayscaleLevel'] as double,
+      grayscaleAmount: map['grayscaleAmount'] as int,
+      returnInvalidData: map['returnInvalidData'] as bool,
     );
   }
 
@@ -76,6 +83,10 @@ class EdgeVisionSettings {
 
   final int maxImageSize;
 
+  final double grayscaleLevel;
+
+  final int grayscaleAmount;
+
   final bool returnInvalidData;
 
   List<num> get fields => [
@@ -91,6 +102,8 @@ class EdgeVisionSettings {
         areaThreshold, // 9
         luminanceThreshold, // 10
         maxImageSize, // 11
+        grayscaleLevel, // 12,
+        grayscaleAmount, // 13
       ];
 
   EdgeVisionSettings operator +(EdgeVisionSettings other) => EdgeVisionSettings(
@@ -106,6 +119,8 @@ class EdgeVisionSettings {
         areaThreshold: areaThreshold + other.areaThreshold,
         luminanceThreshold: luminanceThreshold + other.luminanceThreshold,
         maxImageSize: maxImageSize + other.maxImageSize,
+        grayscaleLevel: grayscaleLevel + other.grayscaleLevel,
+        grayscaleAmount: grayscaleAmount + other.grayscaleAmount,
       );
 
   EdgeVisionSettings operator /(num delimiter) => EdgeVisionSettings(
@@ -121,6 +136,8 @@ class EdgeVisionSettings {
         areaThreshold: areaThreshold / delimiter,
         luminanceThreshold: luminanceThreshold / luminanceThreshold,
         maxImageSize: maxImageSize ~/ delimiter,
+        grayscaleLevel: grayscaleLevel / delimiter,
+        grayscaleAmount: grayscaleAmount ~/ delimiter,
       );
 
   @override
@@ -139,7 +156,9 @@ class EdgeVisionSettings {
           blurRadius == other.blurRadius &&
           areaThreshold == other.areaThreshold &&
           luminanceThreshold == other.luminanceThreshold &&
-          maxImageSize == other.maxImageSize;
+          maxImageSize == other.maxImageSize &&
+          grayscaleLevel == other.grayscaleLevel &&
+          grayscaleAmount == other.grayscaleAmount;
 
   @override
   int get hashCode =>
@@ -154,7 +173,9 @@ class EdgeVisionSettings {
       blurRadius.hashCode ^
       areaThreshold.hashCode ^
       luminanceThreshold.hashCode ^
-      maxImageSize.hashCode;
+      maxImageSize.hashCode ^
+      grayscaleLevel.hashCode ^
+      grayscaleAmount.hashCode;
 
   @override
   String toString() {
@@ -172,6 +193,8 @@ EdgeVisionSettings{
   areaThreshold: $areaThreshold,
   luminanceThreshold: $luminanceThreshold,
   maxImageSize: $maxImageSize,
+  grayscaleLevel: $grayscaleLevel,
+  grayscaleAmount: $grayscaleAmount,
   returnInvalidData: $returnInvalidData,
 }''';
   }
@@ -189,6 +212,8 @@ EdgeVisionSettings{
     double? areaThreshold,
     double? luminanceThreshold,
     int? maxImageSize,
+    double? grayscaleLevel,
+    int? grayscaleAmount,
     bool? returnInvalidData,
   }) {
     return EdgeVisionSettings(
@@ -204,6 +229,8 @@ EdgeVisionSettings{
       areaThreshold: areaThreshold ?? this.areaThreshold,
       luminanceThreshold: luminanceThreshold ?? this.luminanceThreshold,
       maxImageSize: maxImageSize ?? this.maxImageSize,
+      grayscaleLevel: grayscaleLevel ?? this.grayscaleLevel,
+      grayscaleAmount: grayscaleAmount ?? this.grayscaleAmount,
       returnInvalidData: returnInvalidData ?? this.returnInvalidData,
     );
   }
@@ -222,6 +249,8 @@ EdgeVisionSettings{
       'areaThreshold': areaThreshold,
       'luminanceThreshold': luminanceThreshold,
       'maxImageSize': maxImageSize,
+      'grayscaleLevel': grayscaleLevel,
+      'grayscaleAmount': grayscaleAmount,
       'returnInvalidData': returnInvalidData,
     };
   }

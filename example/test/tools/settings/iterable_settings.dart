@@ -6,27 +6,35 @@ const EdgeVisionSettings initialSettings = EdgeVisionSettings(
   directionAngleLevel: 3,
   symmetricAngleThreshold: 0.1,
   skewnessThreshold: 0.15,
-  blackWhiteThreshold: 120,
+  blackWhiteThreshold: 130,
   sobelLevel: 0.2,
   sobelAmount: 1,
-  blurRadius: 2,
+  blurRadius: 3,
   areaThreshold: 0.35,
-  luminanceThreshold: 1.05,
+  luminanceThreshold: 1.20,
+  grayscaleLevel: 0.2,
+  grayscaleAmount: 1,
   maxImageSize: 1000, // Do not resize during the tests
 );
 
 const EdgeVisionSettings targetSettings = EdgeVisionSettings.zero(
-  blackWhiteThreshold: 180,
-  sobelLevel: 5,
-  sobelAmount: 1,
-  luminanceThreshold: 1.25,
-  blurRadius: 3,
+  sobelLevel: 2,
+  grayscaleLevel: 7,
+  grayscaleAmount: 3,
+  // searchMatrixSize: 4,
+  // blackWhiteThreshold: 180,
+  // sobelAmount: 2,
+  // blurRadius: 5,
+  // luminanceThreshold: 1.20,
 );
 
 const EdgeVisionSettings stepSettings = EdgeVisionSettings.zero(
-  blackWhiteThreshold: 10,
-  sobelLevel: 0.25,
-  sobelAmount: 1,
-  luminanceThreshold: 0.1,
-  blurRadius: 1,
+  sobelLevel: 0.15,
+  sobelAmount: 2,
+  // grayscaleLevel: 0.2,
+  // grayscaleAmount: 1,
+  // searchMatrixSize: 1,
+  // blackWhiteThreshold: 10,
+  // blurRadius: 1,
+  // luminanceThreshold: 0.05,
 );

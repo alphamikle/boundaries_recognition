@@ -4,7 +4,7 @@ import 'package:edge_vision/edge_vision.dart';
 
 typedef SettingsCallback = FutureOr<void> Function(EdgeVisionSettings settings, int index, int total);
 typedef SumCallback = num Function(EdgeVisionSettings settings);
-typedef IteratorCallback = void Function(int index, num value);
+typedef IteratorCallback<T extends num> = FutureOr<void> Function(T value);
 
 int calculateIterationsAmount({
   required EdgeVisionSettings initial,
@@ -54,56 +54,134 @@ Future<void> iterateOverSettings({
   required int total,
 }) async {
   final EdgeVisionSettings(
-    blackWhiteThreshold: iBWT,
-    sobelLevel: iSL,
-    sobelAmount: iSA,
-    luminanceThreshold: iLT,
-    blurRadius: iBR,
+    sobelLevel: initialSobelLevel,
+    sobelAmount: initialSobelAmount,
+    blurRadius: initialBlurRadius,
+    blackWhiteThreshold: initialBlackWhiteThreshold,
+    luminanceThreshold: initialLuminanceThreshold,
+    searchMatrixSize: initialSearchMatrixSize,
+    grayscaleLevel: initialGrayscaleLevel,
+    grayscaleAmount: initialGrayscaleAmount,
   ) = initial;
 
   final EdgeVisionSettings(
-    blackWhiteThreshold: tBWT,
-    sobelLevel: tSL,
-    sobelAmount: tSA,
-    luminanceThreshold: tLT,
-    blurRadius: tBR,
+    sobelLevel: targetSobelLevel,
+    sobelAmount: targetSobelAmount,
+    blurRadius: targetBlurRadius,
+    blackWhiteThreshold: targetBlackWhiteThreshold,
+    luminanceThreshold: targetLuminanceThreshold,
+    searchMatrixSize: targetSearchMatrixSize,
+    grayscaleLevel: targetGrayscaleLevel,
+    grayscaleAmount: targetGrayscaleAmount,
   ) = target;
 
   final EdgeVisionSettings(
-    blackWhiteThreshold: sBWT,
-    sobelLevel: sSL,
-    sobelAmount: sSA,
-    luminanceThreshold: sLT,
-    blurRadius: sBR,
+    sobelLevel: stepSobelLevel,
+    sobelAmount: stepSobelAmount,
+    blurRadius: stepBlurRadius,
+    blackWhiteThreshold: stepBlackWhiteThreshold,
+    luminanceThreshold: stepLuminanceThreshold,
+    searchMatrixSize: stepSearchMatrixSize,
+    grayscaleLevel: stepGrayscaleLevel,
+    grayscaleAmount: stepGrayscaleAmount,
   ) = step;
 
   int index = 0;
 
-  for (num bwt = iBWT; bwt <= tBWT; bwt += sBWT) {
-    for (num sl = iSL; sl <= tSL; sl += sSL) {
-      for (num sa = iSA; sa <= tSA; sa += sSA) {
-        for (num lt = iLT; lt <= tLT; lt += sLT) {
-          for (num br = iBR; br <= tBR; br += sBR) {
-            final EdgeVisionSettings settings = EdgeVisionSettings(
-              searchMatrixSize: initial.searchMatrixSize,
-              minObjectSize: initial.minObjectSize,
-              directionAngleLevel: initial.directionAngleLevel,
-              skewnessThreshold: initial.skewnessThreshold,
-              blackWhiteThreshold: bwt.toInt(),
-              sobelLevel: sl.toDouble(),
-              sobelAmount: sa.toInt(),
-              blurRadius: br.toInt(),
-              areaThreshold: initial.areaThreshold,
-              symmetricAngleThreshold: initial.symmetricAngleThreshold,
-              luminanceThreshold: lt.toDouble(),
-              maxImageSize: initial.maxImageSize,
-            );
+  await _propertyIterator(
+    initial: initialSobelLevel,
+    target: targetSobelLevel,
+    step: stepSobelLevel,
+    callback: (double sobelLevel) async {
+      await _propertyIterator(
+        initial: initialSobelAmount,
+        target: targetSobelAmount,
+        step: stepSobelAmount,
+        callback: (int sobelAmount) async {
+          await _propertyIterator(
+            initial: initialBlurRadius,
+            target: targetBlurRadius,
+            step: stepBlurRadius,
+            callback: (int blurRadius) async {
+              await _propertyIterator(
+                initial: initialBlackWhiteThreshold,
+                target: targetBlackWhiteThreshold,
+                step: stepBlackWhiteThreshold,
+                callback: (int blackWhiteThreshold) async {
+                  await _propertyIterator(
+                    initial: initialLuminanceThreshold,
+                    target: targetLuminanceThreshold,
+                    step: stepLuminanceThreshold,
+                    callback: (double luminanceThreshold) async {
+                      await _propertyIterator(
+                        initial: initialSearchMatrixSize,
+                        target: targetSearchMatrixSize,
+                        step: stepSearchMatrixSize,
+                        callback: (int searchMatrixSize) async {
+                          await _propertyIterator(
+                            initial: initialGrayscaleLevel,
+                            target: targetGrayscaleLevel,
+                            step: stepGrayscaleLevel,
+                            callback: (double grayscaleLevel) async {
+                              await _propertyIterator(
+                                initial: initialGrayscaleAmount,
+                                target: targetGrayscaleAmount,
+                                step: stepGrayscaleAmount,
+                                callback: (int grayscaleAmount) async {
+                                  final EdgeVisionSettings settings = EdgeVisionSettings(
+                                    searchMatrixSize: searchMatrixSize,
+                                    blackWhiteThreshold: blackWhiteThreshold,
+                                    sobelLevel: sobelLevel,
+                                    sobelAmount: sobelAmount,
+                                    blurRadius: blurRadius,
+                                    luminanceThreshold: luminanceThreshold,
+                                    grayscaleLevel: grayscaleLevel,
+                                    grayscaleAmount: grayscaleAmount,
+                                    minObjectSize: initial.minObjectSize,
+                                    directionAngleLevel: initial.directionAngleLevel,
+                                    skewnessThreshold: initial.skewnessThreshold,
+                                    areaThreshold: initial.areaThreshold,
+                                    symmetricAngleThreshold: initial.symmetricAngleThreshold,
+                                    maxImageSize: initial.maxImageSize,
+                                  );
 
-            await callback(settings, index, total);
+                                  await callback(settings, index, total);
 
-            index++;
-          }
-        }
+                                  index++;
+                                },
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> _propertyIterator<T extends num>({
+  required T initial,
+  required T target,
+  required T step,
+  required IteratorCallback<T> callback,
+}) async {
+  if (step == 0) {
+    await callback(initial);
+  } else {
+    if (initial is int) {
+      for (int i = initial as int; i <= (target as int); i += step as int) {
+        await callback(i as T);
+      }
+    } else {
+      for (double i = initial as double; i <= (target as double); i += step as double) {
+        await callback(i as T);
       }
     }
   }

@@ -44,18 +44,20 @@ class EdgesBloc extends Cubit<EdgesState> {
     final List<EdgeVisionSettings> settings = [...state.settings];
     settings.add(
       EdgeVisionSettings(
-        blurRadius: 1,
+        blurRadius: 3,
         sobelLevel: 1,
         sobelAmount: 1,
-        blackWhiteThreshold: 125,
+        blackWhiteThreshold: 130,
         skewnessThreshold: 0.15,
-        directionAngleLevel: 5,
+        directionAngleLevel: 10,
         symmetricAngleThreshold: 0.1,
         minObjectSize: 40,
         searchMatrixSize: 3,
         areaThreshold: 0.35,
         luminanceThreshold: 1.05,
         maxImageSize: 300,
+        grayscaleLevel: 0,
+        grayscaleAmount: 0,
       ),
     );
 
@@ -122,10 +124,14 @@ class EdgesBloc extends Cubit<EdgesState> {
       image = await File(filePath).readAsBytes();
     }
 
+    final Image decodedImage = decodeJpg(image)!;
+
     final ImageResult imageResult = ImageResult.fromOriginalImage(
       name: filePath,
       originalImage: image,
-      decodedImage: decodeJpg(image)!,
+      decodedImage: decodedImage,
+      originalImageWidth: decodedImage.width,
+      originalImageHeight: decodedImage.height,
     );
 
     emit(
@@ -150,7 +156,7 @@ class EdgesBloc extends Cubit<EdgesState> {
         ),
       );
     }
-    final int size = 1 == 1 ? 4 : dataset.length;
+    final int size = 1 == 1 ? 6 : dataset.length;
     final List<String> firstNthImages = dataset.getRange(0, size).toList();
 
     int i = 0;
@@ -228,9 +234,9 @@ class EdgesBloc extends Cubit<EdgesState> {
       () async {
         for (final MapEntry(:key, :value) in state.images.entries) {
           start('Image "key"');
-          _applyFiltersToImage(key, value);
+          await _applyFiltersToImage(key, value);
           stop('Image "key"');
-          await Future<void>.delayed(const Duration(milliseconds: 100));
+          await Future<void>.delayed(const Duration(milliseconds: 350));
         }
 
         emit(state.copyWith(processing: false));
@@ -238,19 +244,19 @@ class EdgesBloc extends Cubit<EdgesState> {
     );
   }
 
-  void _applyFiltersToImage(String filename, ImageResult imageResult) {
+  Future<void> _applyFiltersToImage(String filename, ImageResult imageResult) async {
     final bool selected = state.selectedImages.isEmpty || state.selectedImages.contains(imageResult.name);
 
     if (selected == false) {
       return;
     }
 
-    _edgeVision.updateConfiguration(settings: state.settings.toSet());
+    await _edgeVision.updateConfiguration(settings: state.settings.toSet());
 
     final Image image = imageResult.decodedImage.clone();
     late Image preparedImage;
 
-    final Edges edges = _edgeVision.findImageEdges(image: image, onImagePrepare: (Image it) => preparedImage = it);
+    final Edges edges = await _edgeVision.findImageEdges(image: image, onImagePrepare: (Image it) => preparedImage = it);
 
     _updateFilteredImage(
       filename,

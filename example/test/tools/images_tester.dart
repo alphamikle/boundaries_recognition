@@ -56,7 +56,7 @@ Future<void> imagesTester({
         final Image image = images[i];
         final String imageName = names[i];
         late Image preparedImage;
-        final Edges result = edgeVision.findImageEdges(image: image, onImagePrepare: (Image image) => preparedImage = image);
+        final Edges result = await edgeVision.findImageEdges(image: image, onImagePrepare: (Image image) => preparedImage = image);
 
         if (result.corners.isNotEmpty) {
           succeededImages++;
@@ -68,6 +68,8 @@ Future<void> imagesTester({
               decodedImage: image,
               processedImage: encodeJpg(preparedImage),
               edges: result,
+              originalImageWidth: image.width,
+              originalImageHeight: image.height,
               processedImageWidth: preparedImage.width,
               processedImageHeight: preparedImage.height,
             ),

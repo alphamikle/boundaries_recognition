@@ -428,6 +428,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
+  isolator:
+    dependency: transitive
+    description:
+      name: isolator
+      sha256: "6911def30fea9fd0f2aa4f906fe92dcacf41f10084b647804d146f3542f19110"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.8"
   js:
     dependency: transitive
     description:

@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 
 String template(String imagePath) {
   return '''
-import 'tools/test_creator.dart';
+import '../tools/test_creator.dart';
 
 Future<void> main() async {
   await singleImageTestCreator('$imagePath');
@@ -14,10 +14,12 @@ Future<void> main() async {
 }
 
 void main() {
+  int index = 0;
+  final int count = dataset.length;
   for (final String imagePath in dataset) {
     final String code = template(imagePath);
     final String testFilename = imagePath.replaceAll('/', '_').replaceAll(':', '').replaceAll('.jpg', '');
-    final File file = File(join(current, 'test', '$testFilename.dart'));
+    final File file = File(join(current, 'test', 'generated_test', '${index++}_of_${count}_${testFilename}_test.dart'));
     final Directory directory = file.parent;
 
     if (directory.existsSync() == false) {

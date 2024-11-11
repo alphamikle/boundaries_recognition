@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:image/image.dart' as i;
 
 import 'default_settings.dart';
 import 'edge_vision_functions.dart';
+import 'edge_vision_isolated.dart';
 import 'edge_vision_settings.dart';
 import 'edges.dart';
 
@@ -41,6 +44,12 @@ class EdgeVision {
       : _settings = settings,
         _processingMode = processingMode;
 
+  static Future<EdgeVision> isolated({Set<EdgeVisionSettings>? settings, EdgeProcessingMode processingMode = EdgeProcessingMode.oneByOne}) async {
+    final EdgeVisionIsolated edgeVision = EdgeVisionIsolated();
+    await edgeVision.init(settings: settings);
+    return edgeVision;
+  }
+
   final List<EdgeVisionSettings> _settings;
 
   EdgeVisionSettings? _bestSettings;
@@ -49,7 +58,7 @@ class EdgeVision {
 
   static EdgeVisionLogLevel logLevel = EdgeVisionLogLevel.all;
 
-  void updateConfiguration({
+  FutureOr<void> updateConfiguration({
     Set<EdgeVisionSettings>? settings,
     EdgeProcessingMode? processingMode,
   }) {
@@ -67,7 +76,7 @@ class EdgeVision {
     }
   }
 
-  Edges findImageEdges({
+  FutureOr<Edges> findImageEdges({
     required i.Image image,
     bool isImagePrepared = false,
     OnImagePrepare? onImagePrepare,
@@ -103,6 +112,13 @@ class EdgeVision {
     return edges;
   }
 
+  FutureOr<void> resetSettings() {
+    _settingsIndex = 0;
+    _bestSettings = null;
+  }
+
+  FutureOr<void> dispose() {}
+
   Edges _findImageEdgesWithSettings({
     required i.Image image,
     required EdgeVisionSettings settings,
@@ -110,23 +126,18 @@ class EdgeVision {
     OnImagePrepare? onImagePrepare,
   }) {
     final i.Image preparedImage;
-
     if (isImagePrepared) {
       preparedImage = image;
     } else {
-      preparedImage = _prepareImage(image: image);
+      // ignore: discarded_futures
+      preparedImage = _prepareImage(image: image) as i.Image;
       onImagePrepare?.call(preparedImage);
     }
 
-    return findImageEdgesSync(image: preparedImage, settings: settings);
+    return findImageEdgesSync(image: preparedImage, settings: settings, originalImageWidth: image.width, originalImageHeight: image.height);
   }
 
-  i.Image _prepareImage({required i.Image image}) => prepareImageSync(image: image, settings: _pickSettings());
-
-  void resetSettings() {
-    _settingsIndex = 0;
-    _bestSettings = null;
-  }
+  FutureOr<i.Image> _prepareImage({required i.Image image}) => prepareImageSync(image: image, settings: _pickSettings());
 
   EdgeVisionSettings _pickSettings() {
     if (_settings.length == 1) {

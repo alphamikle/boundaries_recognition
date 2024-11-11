@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart';
 import 'package:path/path.dart';
 
+import 'edges_extensions.dart';
 import 'images_finder.dart';
 import 'save_image_as_file.dart';
 import 'save_json_as_file.dart';
@@ -16,6 +17,9 @@ import 'screenshot.dart';
 import 'settings/settings_iterator.dart';
 
 typedef Score = (int maxSucceededImages, int totalImages, EdgeVisionSettings bestSettings);
+
+const double maxAngleSkew = 7;
+const int resultSimilarityThreshold = 10;
 
 bool _isAnglesValid(Edges edges, double diff) {
   final double? leftTop = edges.leftTopAngle;
@@ -46,7 +50,10 @@ Future<void> imageTester({
   final String imagePath = imageToProcess.$2;
   final ImageParams(:card, :background, index: imageIndex) = extractImageParams(imagePath);
 
+  final Set<Edges> successResults = {};
+
   final int totalIterations = await calculateIterationsAmountV2(initial: initial, target: target, step: step);
+  int similarityCounter = 0;
 
   await iterateOverSettings(
     initial: initial,
@@ -60,9 +67,9 @@ Future<void> imageTester({
 
       final EdgeVision edgeVision = EdgeVision(settings: {settings});
       late Image preparedImage;
-      final Edges result = edgeVision.findImageEdges(image: image, onImagePrepare: (Image image) => preparedImage = image);
+      final Edges result = await edgeVision.findImageEdges(image: image, onImagePrepare: (Image image) => preparedImage = image);
       final double? square = result.relativeSquare;
-      final bool success = result.corners.isNotEmpty && _isAnglesValid(result, 5) && square != null && square > 0.35 && square < 0.85;
+      final bool success = result.corners.isNotEmpty && _isAnglesValid(result, maxAngleSkew) && square != null && square > 0.35 && square < 0.85;
 
       if (success) {
         final SimpleImageFrame widget = SimpleImageFrame(
@@ -72,23 +79,32 @@ Future<void> imageTester({
             decodedImage: image,
             processedImage: encodeJpg(preparedImage),
             edges: result,
+            originalImageWidth: image.width,
+            originalImageHeight: image.height,
             processedImageWidth: preparedImage.width,
             processedImageHeight: preparedImage.height,
           ),
         );
 
-        Image widgetImage = await screenshot(widget: widget, size: Size(1200, 1600));
-        widgetImage = widgetImage.resize(720, 540);
+        final bool hasSimilarResult = successResults.any((Edges it) => it.isSimilarWith(result, resultSimilarityThreshold));
 
-        final String filename = '${card}_on_${background}_${imageIndex}_test_${index}_of_$total';
+        if (hasSimilarResult == false && similarityCounter % 5 == 0) {
+          similarityCounter++;
+          successResults.add(result);
 
-        final String imageFullPath = join('one_by_one_tests', 'images', 'image_$filename').replaceAll(' ', '_').replaceAll(':', '').toLowerCase();
-        final String settingsFullPath = join('one_by_one_tests', 'settings', 'settings_$filename').replaceAll(' ', '_').replaceAll(':', '').toLowerCase();
-        final String resultsFullPath = join('one_by_one_tests', 'results', 'results_$filename').replaceAll(' ', '_').replaceAll(':', '').toLowerCase();
+          Image widgetImage = await screenshot(widget: widget, size: Size(1200, 1600));
+          widgetImage = widgetImage.resize(720, 540);
 
-        await saveImageAsFile(widgetImage, imageFullPath);
-        await saveJsonAsFile(settings.toJson(), settingsFullPath);
-        await saveJsonAsFile(result.toJson(), resultsFullPath);
+          final String filename = '${card}_on_${background}_${imageIndex}_test_${index}_of_$total';
+
+          final String imageFullPath = join('one_by_one_tests', 'images', 'image_$filename').replaceAll(' ', '_').replaceAll(':', '').toLowerCase();
+          final String settingsFullPath = join('one_by_one_tests', 'settings', 'settings_$filename').replaceAll(' ', '_').replaceAll(':', '').toLowerCase();
+          final String resultsFullPath = join('one_by_one_tests', 'results', 'results_$filename').replaceAll(' ', '_').replaceAll(':', '').toLowerCase();
+
+          await saveImageAsFile(widgetImage, imageFullPath);
+          await saveJsonAsFile(settings.toJson(), settingsFullPath);
+          await saveJsonAsFile(result.toJson(), resultsFullPath);
+        }
       }
 
       final double timeConsumed = stop('Processing', silent: true);

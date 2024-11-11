@@ -17,6 +17,8 @@ class ImageResult extends Equatable {
     required this.decodedImage,
     required this.processedImage,
     required this.edges,
+    required this.originalImageWidth,
+    required this.originalImageHeight,
     required this.processedImageWidth,
     required this.processedImageHeight,
   });
@@ -25,6 +27,8 @@ class ImageResult extends Equatable {
     required this.name,
     required this.originalImage,
     required this.decodedImage,
+    required this.originalImageWidth,
+    required this.originalImageHeight,
   })  : processedImage = null,
         processedImageWidth = null,
         processedImageHeight = null,
@@ -39,6 +43,10 @@ class ImageResult extends Equatable {
   final Uint8List? processedImage;
 
   final Edges? edges;
+
+  final int originalImageWidth;
+
+  final int originalImageHeight;
 
   final int? processedImageWidth;
 
