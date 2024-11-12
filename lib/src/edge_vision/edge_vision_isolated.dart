@@ -18,7 +18,10 @@ enum EdgeVisionEvents {
 }
 
 class EdgeVisionIsolated with Frontend implements EdgeVision {
-  Future<void> init({Set<EdgeVisionSettings>? settings, EdgeProcessingMode processingMode = EdgeProcessingMode.oneByOne}) async {
+  Future<void> init({
+    Set<EdgeVisionSettings>? settings,
+    EdgeProcessingMode processingMode = EdgeProcessingMode.oneByOne,
+  }) async {
     await initBackend(
       initializer: EdgeVisionBackend.isolate,
       data: (
@@ -57,17 +60,18 @@ class EdgeVisionIsolated with Frontend implements EdgeVision {
 
   @override
   Future<void> resetSettings() async {
-    throw UnimplementedError();
+    await run(event: EdgeVisionEvents.resetSettings);
   }
 
   @override
   Future<void> updateConfiguration({Set<EdgeVisionSettings>? settings, EdgeProcessingMode? processingMode}) async {
-    throw UnimplementedError();
+    final ConfigurationUpdateArgument argument = (settings: settings, processingMode: processingMode);
+    await run(event: EdgeVisionEvents.updateConfiguration, data: argument);
   }
 
   @override
   Future<void> dispose() async {
-    throw UnimplementedError();
+    await destroy();
   }
 
   @override

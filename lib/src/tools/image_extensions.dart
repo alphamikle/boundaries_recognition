@@ -158,11 +158,11 @@ extension ExtendedImage on i.Image {
     return i.Channel.luminance;
   }
 
-  i.Image withBestChannelOnly(double luminanceThreshold) {
+  (i.Image, i.Channel) withBestChannelOnly(double luminanceThreshold) {
     final i.Channel channel = bestChannel(luminanceThreshold);
 
     if (channel == i.Channel.alpha) {
-      return this;
+      return (this, channel);
     }
 
     final i.Image result = i.Image.from(this);
@@ -181,7 +181,7 @@ extension ExtendedImage on i.Image {
       }
     }
 
-    return result;
+    return (result, channel);
   }
 }
 

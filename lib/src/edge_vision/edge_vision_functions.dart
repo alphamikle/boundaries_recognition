@@ -1,6 +1,7 @@
 import 'dart:math' show Point, max;
 
 import 'package:image/image.dart' show Image, Pixel, gaussianBlur, grayscale, sobel;
+import 'package:image/src/color/channel.dart';
 
 import '../../edge_vision.dart';
 import '../tools/bench.dart';
@@ -308,6 +309,8 @@ Image prepareImageSync({
     _p2('Resizing image [${image.width}x${image.height}] => [${width}x$height]');
   }
 
+  Channel? selectedChannel;
+
   if (grayscaleAmount > 0) {
     if (grayscaleAmount == 1) {
       _p1('Applying grayscale');
@@ -332,13 +335,15 @@ Image prepareImageSync({
     }
   } else {
     _p1('Selecting best channel');
-    imageToProcess = imageToProcess.withBestChannelOnly(luminanceThreshold);
+    final (Image image, Channel bestChannel) channel = imageToProcess.withBestChannelOnly(luminanceThreshold);
+    imageToProcess = channel.$1;
+    selectedChannel = channel.$2;
     _p2('Selecting best channel');
   }
 
   if (blurRadius > 0) {
     _p1('Applying blur');
-    imageToProcess = gaussianBlur(imageToProcess, radius: blurRadius);
+    imageToProcess = gaussianBlur(imageToProcess, radius: blurRadius, maskChannel: selectedChannel ?? Channel.luminance);
     _p2('Applying blur');
   }
 
@@ -352,7 +357,7 @@ Image prepareImageSync({
       if (sobelAmount > 1) {
         _p1('Applying sobel $i / $sobelAmount');
       }
-      imageToProcess = sobel(imageToProcess, amount: sobelLevel);
+      imageToProcess = sobel(imageToProcess, amount: sobelLevel, maskChannel: selectedChannel ?? Channel.luminance);
       if (sobelAmount > 1) {
         _p2('Applying sobel $i / $sobelAmount');
       }

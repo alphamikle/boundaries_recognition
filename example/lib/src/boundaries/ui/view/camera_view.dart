@@ -41,7 +41,7 @@ class _CameraViewState extends State<CameraView> {
     bestSettings9,
   ].average();
 
-  late final Future<EdgeVision> edgeVisionFuture = EdgeVision.isolated(settings: {averageSettings});
+  late final Future<EdgeVision> edgeVisionFuture = EdgeVision.isolated(settings: {averageSettings}, threads: 1);
   EdgeVision? edgeVision;
 
   bool cloud = false;
@@ -64,7 +64,7 @@ class _CameraViewState extends State<CameraView> {
   Future<void> handleImage(CameraImage cameraImage) async {
     await Throttle.run(
       'handle_image',
-      delay: const Duration(milliseconds: 100),
+      delay: const Duration(milliseconds: 1000 ~/ 30),
       () async {
         start('Handling image');
         final Image image = copyRotate(cameraImage.toImage(), angle: 90);

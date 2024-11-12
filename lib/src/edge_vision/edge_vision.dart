@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:image/image.dart' as i;
 
 import 'default_settings.dart';
 import 'edge_vision_functions.dart';
 import 'edge_vision_isolated.dart';
+import 'edge_vision_orchestrator.dart';
 import 'edge_vision_settings.dart';
 import 'edges.dart';
 
@@ -44,10 +46,16 @@ class EdgeVision {
       : _settings = settings,
         _processingMode = processingMode;
 
-  static Future<EdgeVision> isolated({Set<EdgeVisionSettings>? settings, EdgeProcessingMode processingMode = EdgeProcessingMode.oneByOne}) async {
-    final EdgeVisionIsolated edgeVision = EdgeVisionIsolated();
-    await edgeVision.init(settings: settings);
-    return edgeVision;
+  static Future<EdgeVision> isolated({Set<EdgeVisionSettings>? settings, EdgeProcessingMode processingMode = EdgeProcessingMode.oneByOne, int? threads}) async {
+    final List<EdgeVisionIsolated> $threads = List.generate(threads ?? Platform.numberOfProcessors, (int index) => EdgeVisionIsolated());
+
+    for (final EdgeVisionIsolated thread in $threads) {
+      await thread.init(settings: settings, processingMode: processingMode);
+    }
+
+    return EdgeVisionOrchestrator(
+      threads: $threads,
+    );
   }
 
   final List<EdgeVisionSettings> _settings;
