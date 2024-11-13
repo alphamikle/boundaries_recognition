@@ -41,7 +41,7 @@ class _CameraViewState extends State<CameraView> {
     bestSettings9,
   ].average();
 
-  late final Future<EdgeVision> edgeVisionFuture = EdgeVision.isolated(settings: {averageSettings}, threads: 1);
+  late final Future<EdgeVision> edgeVisionFuture = EdgeVision.isolated(settings: {averageSettings}, threads: 4);
   EdgeVision? edgeVision;
 
   bool cloud = false;
@@ -61,26 +61,28 @@ class _CameraViewState extends State<CameraView> {
     nav.pop(picture);
   }
 
+  Future<void> imageHandler(CameraImage cameraImage) async {
+    start('Handling image');
+    final Image image = copyRotate(cameraImage.toImage(), angle: 90);
+    edgeVision ??= await edgeVisionFuture;
+    final Edges edges = await edgeVision!.findImageEdges(image: image);
+    imageWidth = edges.originalImageSize?.width ?? image.width;
+    imageHeight = edges.originalImageSize?.height ?? image.height;
+    xMoveTo = edges.xMoveTo;
+    yMoveTo = edges.yMoveTo;
+    points = cloud ? edges.allPoints : edges.corners;
+    stop('Handling image');
+    print('Found ${points.length} points');
+    if (mounted && context.mounted) {
+      setState(() {});
+    }
+  }
+
   Future<void> handleImage(CameraImage cameraImage) async {
     await Throttle.run(
       'handle_image',
       delay: const Duration(milliseconds: 1000 ~/ 30),
-      () async {
-        start('Handling image');
-        final Image image = copyRotate(cameraImage.toImage(), angle: 90);
-        edgeVision ??= await edgeVisionFuture;
-        final Edges edges = await edgeVision!.findImageEdges(image: image);
-        imageWidth = edges.originalImageSize?.width ?? image.width;
-        imageHeight = edges.originalImageSize?.height ?? image.height;
-        xMoveTo = edges.xMoveTo;
-        yMoveTo = edges.yMoveTo;
-        points = cloud ? edges.allPoints : edges.corners;
-        stop('Handling image');
-        print('Found ${points.length} points');
-        if (mounted && context.mounted) {
-          setState(() {});
-        }
-      },
+      true ? () async => imageHandler(cameraImage) : () => unawaited(imageHandler(cameraImage)),
     );
   }
 

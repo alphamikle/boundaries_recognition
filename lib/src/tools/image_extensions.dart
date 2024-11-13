@@ -23,6 +23,14 @@ extension ExtendedImage on i.Image {
     return image;
   }
 
+  i.Image contrast(double level, {i.Channel channel = i.Channel.luminance}) {
+    if (level < 0 || level > 200) {
+      throw ArgumentError('level should be >= 0 and <= 200');
+    }
+    final i.Image image = i.contrast(this, contrast: level, maskChannel: channel);
+    return image;
+  }
+
   bool isBackgroundDark({int borderWidth = 5, int threshold = 128, double limit = 0.5}) {
     int darkPixels = 0;
     int totalPixels = 0;

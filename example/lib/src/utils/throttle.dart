@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:flutter/foundation.dart';
+typedef AsyncOrSyncCallback = FutureOr<void> Function();
 
 abstract final class Throttle {
   static final Map<String, Timer> _timers = {};
   static final Map<String, int> _operationsInRun = {};
 
-  static Future<void> run(String id, AsyncCallback callback, {Duration delay = const Duration(milliseconds: 1000 ~/ 15)}) async {
+  static Future<void> run(String id, AsyncOrSyncCallback callback, {Duration delay = const Duration(milliseconds: 1000 ~/ 15)}) async {
     if (_timers.containsKey(id) || _operationsInRun.containsKey(id)) {
       if (_timers.containsKey(id) == false) {
         final int duration = DateTime.now().microsecondsSinceEpoch - _operationsInRun[id]!;

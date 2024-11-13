@@ -40,6 +40,8 @@ const List<String> dataset = [
   'assets/cards/300x400/color_white_17.jpg',
   'assets/cards/300x400/white_black_5.jpg',
   'assets/cards/300x400/dark_dark_1.jpg',
+  'assets/cards/300x400/dark_dark_3.jpg',
+  'assets/cards/300x400/dark_dark_4.jpg',
   'assets/cards/300x400/white_black_7.jpg',
   'assets/cards/300x400/color_white_15.jpg',
   'assets/cards/300x400/color_black_8.jpg',

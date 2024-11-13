@@ -28,8 +28,8 @@ class SimpleImageFrame extends StatelessWidget {
     return Positioned.fill(
       child: EdgesPainter(
         points: result.edges!.corners,
-        width: result.processedImageWidth!,
-        height: result.processedImageHeight!,
+        width: result.originalImageWidth,
+        height: result.originalImageHeight,
         color: color,
       ),
     );
@@ -55,7 +55,9 @@ class SimpleImageFrame extends StatelessWidget {
                     result.originalImage,
                     fit: BoxFit.cover,
                   ),
-                  painter(Colors.blue),
+                  Positioned.fill(
+                    child: painter(Colors.blue),
+                  ),
                 ],
               ),
             ),
@@ -68,7 +70,9 @@ class SimpleImageFrame extends StatelessWidget {
                     result.processedImage!,
                     fit: BoxFit.cover,
                   ),
-                  painter(Colors.red),
+                  Positioned.fill(
+                    child: painter(Colors.blue),
+                  ),
                   if (xMoveTo != null && yMoveTo != null)
                     Positioned(
                       left: 0,

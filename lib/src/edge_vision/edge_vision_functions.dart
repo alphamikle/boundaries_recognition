@@ -46,12 +46,13 @@ Edges findImageEdgesSync({
     :skewnessThreshold,
     :areaThreshold,
     :symmetricAngleThreshold,
-    returnInvalidData: returnInvalid,
+    :returnInvalidData,
+    :blackWhiteThreshold
   ) = settings;
 
   final int width = image.width;
   final int height = image.height;
-  final bool noInvalidData = returnInvalid == false;
+  final bool noInvalidData = returnInvalidData == false;
 
   List<Point<int>> allPoints = [];
 
@@ -83,7 +84,7 @@ Edges findImageEdgesSync({
       final int y = point.y;
 
       // Determine not only on the black surfaces
-      if (point.isInRectangle(width, height) == false || visited[y][x] || image.getPixel(x, y).isBlack) {
+      if (point.isInRectangle(width, height) == false || visited[y][x] || image.getPixel(x, y).isDark(blackWhiteThreshold)) {
         continue;
       }
 
@@ -341,6 +342,10 @@ Image prepareImageSync({
     _p2('Selecting best channel');
   }
 
+  _p1('Applying contrast');
+  imageToProcess = imageToProcess.contrast(135, channel: selectedChannel ?? Channel.luminance);
+  _p2('Applying contrast');
+
   if (blurRadius > 0) {
     _p1('Applying blur');
     imageToProcess = gaussianBlur(imageToProcess, radius: blurRadius, maskChannel: selectedChannel ?? Channel.luminance);
@@ -369,11 +374,11 @@ Image prepareImageSync({
     }
   }
 
-  if (blackWhiteThreshold > 0 && blackWhiteThreshold < 255) {
-    _p1('Applying black/white filter');
-    imageToProcess = imageToProcess.toBlackWhite(blackWhiteThreshold);
-    _p2('Applying black/white filter');
-  }
+  // if (blackWhiteThreshold > 0 && blackWhiteThreshold < 255) {
+  //   _p1('Applying black/white filter');
+  //   imageToProcess = imageToProcess.toBlackWhite(blackWhiteThreshold);
+  //   _p2('Applying black/white filter');
+  // }
 
   return imageToProcess;
 }

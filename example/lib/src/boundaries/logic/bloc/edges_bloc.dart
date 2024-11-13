@@ -157,7 +157,8 @@ class EdgesBloc extends Cubit<EdgesState> {
       );
     }
     final int size = 1 == 1 ? 6 : dataset.length;
-    final List<String> firstNthImages = dataset.getRange(0, size).toList();
+    final List<String> firstNthImages = dataset.where((String it) => it.contains('dark_dark')).toList();
+    // final List<String> firstNthImages = dataset.getRange(0, size).toList();
 
     int i = 0;
     final int total = firstNthImages.length;
