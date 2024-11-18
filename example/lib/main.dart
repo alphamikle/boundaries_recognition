@@ -6,7 +6,7 @@ import 'src/boundaries/logic/bloc/edges_bloc.dart';
 import 'src/boundaries/ui/view/edges_sandbox_view.dart';
 
 Future<void> main() async {
-  final EdgeVision edgeVision = await EdgeVision.isolated(processingMode: EdgeProcessingMode.allInOne);
+  final EdgeVision edgeVision = await EdgeVision.isolated(processingMode: EdgeProcessingMode.allInOne, threads: 4);
 
   runApp(
     MyApp(edgeVision: edgeVision),

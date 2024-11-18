@@ -1,10 +1,10 @@
 name: edge_vision
-description: "EdgeVision — A Flutter package for accurate and efficient object boundary detection. Capture clean contours and sharp edges effortlessly, making it ideal for applications like document scanning and object recognition. Simple to integrate, precise in action."
+description: "EdgeVision – a pure Dart-implementation package for accurate and fast object boundary detection. Capture clean and sharp edges effortlessly, making it ideal for applications like document scanning and object recognition."
 version: 0.0.1
 homepage: https://alphamikle.dev
 
 environment:
-  sdk: ^3.6.0-175.0.dev
+  sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
   image: ^4.3.0

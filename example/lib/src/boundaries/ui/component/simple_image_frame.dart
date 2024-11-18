@@ -1,6 +1,7 @@
 import 'package:edge_vision/edge_vision.dart';
 import 'package:flutter/material.dart';
 
+import '../../../utils/points_extension.dart';
 import '../../logic/model/image_result.dart';
 import 'edges_painter.dart';
 
@@ -27,9 +28,9 @@ class SimpleImageFrame extends StatelessWidget {
   Widget painter(Color color) {
     return Positioned.fill(
       child: EdgesPainter(
-        points: result.edges!.corners,
-        width: result.originalImageWidth,
-        height: result.originalImageHeight,
+        points: result.edges!.corners.toDouble(),
+        width: result.originalImageWidth.toDouble(),
+        height: result.originalImageHeight.toDouble(),
         color: color,
       ),
     );

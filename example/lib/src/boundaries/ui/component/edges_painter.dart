@@ -11,9 +11,9 @@ class EdgesPainter extends StatelessWidget {
     super.key,
   });
 
-  final List<Point<int>> points;
-  final int width;
-  final int height;
+  final List<Point<double>> points;
+  final double width;
+  final double height;
   final Color color;
 
   @override
@@ -37,12 +37,12 @@ class _Painter extends CustomPainter {
     required this.color,
   });
 
-  final List<Point<int>> points;
-  final int width;
-  final int height;
+  final List<Point<double>> points;
+  final double width;
+  final double height;
   final Color color;
 
-  Offset pointToOffset(Point<int> point, Size size) {
+  Offset pointToOffset(Point<double> point, Size size) {
     final double xM = size.width / width;
     final double yM = size.height / height;
 

@@ -4,6 +4,7 @@ import 'package:edge_vision/edge_vision.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../utils/points_extension.dart';
 import '../../logic/bloc/edges_bloc.dart';
 import '../../logic/bloc/edges_state.dart';
 import '../../logic/model/image_result.dart';
@@ -51,9 +52,9 @@ Edges: ${result.edges}
     final Widget? painter = hasEdges && state.painterOn
         ? Positioned.fill(
             child: EdgesPainter(
-              points: state.dotsCloudOn ? result.edges!.allPoints : result.edges!.corners,
-              width: result.originalImageWidth,
-              height: result.originalImageHeight,
+              points: (state.dotsCloudOn ? result.edges!.allPoints : result.edges!.corners).toDouble(),
+              width: result.originalImageWidth.toDouble(),
+              height: result.originalImageHeight.toDouble(),
               color: Colors.red,
             ),
           )

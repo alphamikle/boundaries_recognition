@@ -124,7 +124,7 @@ class EdgesBloc extends Cubit<EdgesState> {
       image = await File(filePath).readAsBytes();
     }
 
-    final Image decodedImage = decodeJpg(image)!;
+    final Image decodedImage = decodeJpg(image)!.cropByAspectRatio(3 / 4);
 
     final ImageResult imageResult = ImageResult.fromOriginalImage(
       name: filePath,
@@ -156,9 +156,10 @@ class EdgesBloc extends Cubit<EdgesState> {
         ),
       );
     }
-    final int size = 1 == 1 ? 6 : dataset.length;
-    final List<String> firstNthImages = dataset.where((String it) => it.contains('dark_dark')).toList();
-    // final List<String> firstNthImages = dataset.getRange(0, size).toList();
+
+    final int size = 1 == 1 ? 20 : dataset.length;
+    // final List<String> firstNthImages = dataset.where((String it) => it.contains('dark_dark')).toList();
+    final List<String> firstNthImages = dataset.getRange(0, size).toList();
 
     int i = 0;
     final int total = firstNthImages.length;
@@ -237,7 +238,7 @@ class EdgesBloc extends Cubit<EdgesState> {
           start('Image "key"');
           await _applyFiltersToImage(key, value);
           stop('Image "key"');
-          await Future<void>.delayed(const Duration(milliseconds: 350));
+          await Future<void>.delayed(const Duration(milliseconds: 50));
         }
 
         emit(state.copyWith(processing: false));

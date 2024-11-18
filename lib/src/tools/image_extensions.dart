@@ -31,6 +31,30 @@ extension ExtendedImage on i.Image {
     return image;
   }
 
+  i.Image cropByAspectRatio(double aspectRatio) {
+    final int currentWidth = width;
+    final int currentHeight = height;
+    final double currentAspectRatio = currentWidth / currentHeight;
+
+    if (aspectRatio == currentAspectRatio) {
+      return this;
+    }
+
+    int newWidth = currentWidth;
+    int newHeight = currentHeight;
+
+    if (currentAspectRatio > aspectRatio) {
+      newWidth = (currentHeight * aspectRatio).round();
+    } else if (currentAspectRatio < aspectRatio) {
+      newHeight = (currentWidth / aspectRatio).round();
+    }
+
+    final int offsetX = ((currentWidth - newWidth) / 2).round();
+    final int offsetY = ((currentHeight - newHeight) / 2).round();
+
+    return i.copyCrop(this, x: offsetX, y: offsetY, width: newWidth, height: newHeight);
+  }
+
   bool isBackgroundDark({int borderWidth = 5, int threshold = 128, double limit = 0.5}) {
     int darkPixels = 0;
     int totalPixels = 0;
