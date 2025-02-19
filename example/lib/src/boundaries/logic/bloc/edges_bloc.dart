@@ -1,208 +1,44 @@
 import 'dart:async';
-import 'dart:developer' as dev;
-import 'dart:io';
+import 'dart:isolate';
 
 import 'package:bloc/bloc.dart';
 import 'package:camera/camera.dart';
 import 'package:edge_vision/edge_vision.dart';
 import 'package:flutter/services.dart';
-import 'package:image/image.dart';
+import 'package:isolator/isolator.dart';
 
-import '../../../utils/bench.dart';
-import '../../../utils/dataset.dart';
-import '../../../utils/debouncer.dart';
-import '../../../utils/image_params_extractor.dart';
-import '../../../utils/sleep.dart';
+import '../../../utils/throttle.dart';
 import '../../../utils/types.dart';
-import '../model/image_result.dart';
-import '../model/test_image.dart';
+import 'edges_backend.dart';
 import 'edges_state.dart';
+import 'events.dart';
 
-class EdgesBloc extends Cubit<EdgesState> {
-  EdgesBloc({
-    required EdgeVision edgeVision,
-  })  : _edgeVision = edgeVision,
-        super(EdgesState.initial());
+class EdgesBloc extends Cubit<EdgesState> with Frontend {
+  EdgesBloc() : super(EdgesState.initial());
 
-  final EdgeVision _edgeVision;
   CameraController? _cameraController;
 
   CameraController? get cameraController => _cameraController;
 
   Future<void> pickImage() async => throw UnimplementedError();
 
-  Future<void> togglePainter() async => emit(state.copyWith(painterOn: !state.painterOn));
+  Future<void> togglePainter() async => run(event: Events.togglePainter);
 
-  Future<void> toggleDotsCloud() async => emit(state.copyWith(dotsCloudOn: !state.dotsCloudOn));
+  Future<void> toggleDotsCloud() async => run(event: Events.toggleCloud);
 
-  Future<void> chooseSettingsAsActive(int settingsIndex) async {
-    emit(state.copyWith(settingsIndex: settingsIndex));
-    await _applyFilters();
-  }
+  Future<void> chooseSettingsAsActive(int settingsIndex) async => run(event: Events.selectActiveSettings, data: settingsIndex);
 
-  Future<void> addNewSettings() async {
-    final List<EdgeVisionSettings> settings = [...state.settings];
-    settings.add(
-      EdgeVisionSettings(
-        blurRadius: 3,
-        sobelLevel: 1,
-        sobelAmount: 1,
-        blackWhiteThreshold: 130,
-        skewnessThreshold: 0.15,
-        directionAngleLevel: 10,
-        symmetricAngleThreshold: 0.1,
-        minObjectSize: 40,
-        searchMatrixSize: 3,
-        areaThreshold: 0.35,
-        luminanceThreshold: 1.05,
-        maxImageSize: 300,
-        grayscaleLevel: 0,
-        grayscaleAmount: 0,
-      ),
-    );
+  Future<void> addNewSettings() async => run(event: Events.addNewSettings);
 
-    emit(
-      state.copyWith(
-        settings: settings,
-        settingsIndex: settings.length - 1,
-      ),
-    );
+  Future<void> removeSelectedSettings() async => run(event: Events.removeSelectedSettings);
 
-    await _applyFilters();
-  }
+  Future<void> toggleImageSelection(String filePath) async => run(event: Events.toggleImageSelection, data: filePath);
 
-  Future<void> removeSelectedSettings() async {
-    int? settingsIndex = state.settingsIndex;
+  Future<void> updateOpacity(double opacity) async => run(event: Events.updateOpacity, data: opacity);
 
-    if (state.settings.length <= 1 || settingsIndex == null) {
-      return;
-    }
+  Future<void> loadImage(String filePath) async => run(event: Events.loadImage, data: filePath);
 
-    final List<EdgeVisionSettings> settings = [...state.settings];
-    settings.removeAt(settingsIndex);
-
-    settingsIndex = settingsIndex.clamp(0, settings.length - 1);
-
-    emit(
-      state.copyWith(
-        settings: settings,
-        settingsIndex: settingsIndex,
-      ),
-    );
-
-    await _applyFilters();
-  }
-
-  void toggleImageSelection(String filePath) {
-    final Set<String> selectedImages = {...state.selectedImages};
-    if (selectedImages.contains(filePath)) {
-      selectedImages.remove(filePath);
-    } else {
-      selectedImages.add(filePath);
-    }
-
-    emit(
-      state.copyWith(
-        selectedImages: selectedImages,
-      ),
-    );
-  }
-
-  void updateOpacity(double opacity) => emit(state.copyWith(opacity: opacity));
-
-  Future<void> loadImage(String filePath) async {
-    if (state.images.containsKey(filePath)) {
-      return;
-    }
-
-    final Uint8List image;
-
-    if (filePath.contains('assets')) {
-      final ByteData bytes = await rootBundle.load(filePath);
-      image = bytes.buffer.asUint8List();
-    } else {
-      image = await File(filePath).readAsBytes();
-    }
-
-    final Image decodedImage = decodeJpg(image)!.cropByAspectRatio(3 / 4);
-
-    final ImageResult imageResult = ImageResult.fromOriginalImage(
-      name: filePath,
-      originalImage: image,
-      decodedImage: decodedImage,
-      originalImageWidth: decodedImage.width,
-      originalImageHeight: decodedImage.height,
-    );
-
-    emit(
-      state.copyWith(
-        images: {
-          ...state.images,
-          filePath: imageResult,
-        },
-        imagesList: [...state.imagesList, imageResult],
-      ),
-    );
-
-    await _applyFilters();
-  }
-
-  Future<void> loadImages() async {
-    if (state.settings.isEmpty) {
-      emit(
-        state.copyWith(
-          settings: defaultSettings.toList(),
-          settingsIndex: 0,
-        ),
-      );
-    }
-
-    final int size = 1 == 1 ? 20 : dataset.length;
-    // final List<String> firstNthImages = dataset.where((String it) => it.contains('dark_dark')).toList();
-    final List<String> firstNthImages = dataset.getRange(0, size).toList();
-
-    int i = 0;
-    final int total = firstNthImages.length;
-
-    final List<double> cpuTime = [];
-
-    for (final String image in firstNthImages) {
-      i++;
-
-      final ImageParams imageParams = extractImageParams(image);
-
-      final TestImage testImage = TestImage(
-        index: int.parse(imageParams.index),
-        size: imageParams.size,
-        card: imageParams.card,
-        background: imageParams.background,
-        fullPath: image,
-      );
-
-      emit(
-        state.copyWith(
-          testImages: {
-            ...state.testImages,
-            image: testImage,
-          },
-        ),
-      );
-
-      start('image $i');
-      await loadImage(image);
-      final double result = stop('image $i', silent: true);
-      cpuTime.add(result);
-
-      dev.log('Processed: $i / $total image in ${result}ms');
-
-      await sleep(10);
-    }
-
-    final double sum = cpuTime.fold(0, (double sum, double it) => sum + it);
-    final double avg = sum / cpuTime.length;
-
-    dev.log('Total processing time for $total images = ${sum}ms and average time = ${avg}ms');
-  }
+  Future<void> loadImages() async => run(event: Events.loadImages);
 
   Future<void> applySettings(ValueChanger<EdgeVisionSettings> emitter) async {
     final EdgeVisionSettings? selectedSettings = state.selectedSettings;
@@ -213,88 +49,37 @@ class EdgesBloc extends Cubit<EdgesState> {
     }
 
     final EdgeVisionSettings newSettings = emitter(selectedSettings);
-    final List<EdgeVisionSettings> allSettings = [...state.settings];
-    allSettings[settingsIndex] = newSettings;
 
-    emit(
-      state.copyWith(
-        settings: allSettings,
-      ),
-    );
-
-    dev.log(newSettings.toString());
-
-    await _applyFilters();
+    await run(event: Events.applySettings, data: (settingsIndex, newSettings));
   }
 
-  Future<void> _applyFilters() async {
-    emit(state.copyWith(processing: true));
-
-    await Debouncer.run(
-      'filters_apply',
-      delay: const Duration(seconds: 1),
-      () async {
-        for (final MapEntry(:key, :value) in state.images.entries) {
-          start('Image "key"');
-          await _applyFiltersToImage(key, value);
-          stop('Image "key"');
-          await Future<void>.delayed(const Duration(milliseconds: 50));
-        }
-
-        emit(state.copyWith(processing: false));
-      },
-    );
+  Future<void> init() async {
+    initActions();
+    await initBackend(initializer: EdgesBackend.isolate);
+    await run(event: Events.init);
   }
 
-  Future<void> _applyFiltersToImage(String filename, ImageResult imageResult) async {
-    final bool selected = state.selectedImages.isEmpty || state.selectedImages.contains(imageResult.name);
-
-    if (selected == false) {
-      return;
-    }
-
-    await _edgeVision.updateConfiguration(settings: state.settings.toSet());
-
-    final Image image = imageResult.decodedImage.clone();
-    late Image preparedImage;
-
-    final Edges edges = await _edgeVision.findImageEdges(image: image, onImagePrepare: (Image it) => preparedImage = it);
-
-    _updateFilteredImage(
-      filename,
-      (ImageResult value) => value.copyWith(
-        processedImage: encodeJpg(preparedImage),
-        edges: edges,
-        processedImageHeight: preparedImage.height,
-        processedImageWidth: preparedImage.width,
+  void _emit(EdgesState state) {
+    unawaited(
+      Throttle.run(
+        'edges_bloc_emit',
+        delay: const Duration(milliseconds: 100),
+        () => emit(state),
       ),
     );
   }
 
-  void _updateFilteredImage(String filename, ValueChanger<ImageResult> emitter) {
-    final ImageResult? oldImageResult = state.images[filename];
+  Future<void> _rootBundleLoader({
+    required RootBundleEvent event,
+    required String data,
+  }) async {
+    final ByteData fileData = await rootBundle.load(data);
+    await run(event: event, data: TransferableTypedData.fromList([fileData.buffer.asUint8List()]));
+  }
 
-    if (oldImageResult == null) {
-      return;
-    }
-
-    final ImageResult imageResult = emitter(oldImageResult);
-    final List<ImageResult> imagesList = [...state.imagesList];
-
-    final int index = imagesList.indexWhere((ImageResult element) => element.name == filename);
-
-    if (index >= 0) {
-      imagesList[index] = imageResult;
-    }
-
-    emit(
-      state.copyWith(
-        images: {
-          ...state.images,
-          filename: imageResult,
-        },
-        imagesList: imagesList,
-      ),
-    );
+  @override
+  void initActions() {
+    whenEventCome(Events.emit).runSimple(_emit);
+    whenEventCome<RootBundleEvent>().run(_rootBundleLoader);
   }
 }

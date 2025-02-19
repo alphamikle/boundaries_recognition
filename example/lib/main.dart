@@ -1,4 +1,3 @@
-import 'package:edge_vision/edge_vision.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -6,20 +5,25 @@ import 'src/boundaries/logic/bloc/edges_bloc.dart';
 import 'src/boundaries/ui/view/edges_sandbox_view.dart';
 
 Future<void> main() async {
-  final EdgeVision edgeVision = await EdgeVision.isolated(processingMode: EdgeProcessingMode.allInOne, threads: 4);
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final EdgesBloc edgesBloc = EdgesBloc();
+  await edgesBloc.init();
 
   runApp(
-    MyApp(edgeVision: edgeVision),
+    MyApp(
+      bloc: edgesBloc,
+    ),
   );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({
-    required this.edgeVision,
+    required this.bloc,
     super.key,
   });
 
-  final EdgeVision edgeVision;
+  final EdgesBloc bloc;
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +35,7 @@ class MyApp extends StatelessWidget {
       ),
       home: MultiBlocProvider(
         providers: [
-          BlocProvider(
-            create: (BuildContext context) => EdgesBloc(edgeVision: edgeVision),
-          ),
+          BlocProvider.value(value: bloc),
         ],
         child: const EdgesSandboxView(),
       ),

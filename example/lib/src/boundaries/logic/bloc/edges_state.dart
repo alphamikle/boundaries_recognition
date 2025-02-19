@@ -90,9 +90,13 @@ class EdgesState extends Equatable {
 
     final int totalSuccess = success.values.fold(0, (int sum, int it) => sum + it);
     final int totalOverall = total.values.fold(0, (int sum, int it) => sum + it);
-    final double percent = (totalSuccess / totalOverall * 1000).toInt() / 10;
+    if (totalOverall > 0) {
+      final double percent = (totalSuccess / totalOverall * 1000).toInt() / 10;
 
-    results['Total'] = '$totalSuccess/$totalOverall | $percent%';
+      results['Total'] = '$totalSuccess/$totalOverall | $percent%';
+    } else {
+      results['Total'] = '$totalSuccess/$totalOverall | 0%';
+    }
 
     return results;
   }

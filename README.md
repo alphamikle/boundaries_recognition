@@ -2,6 +2,14 @@
 
 Edge Vision is a powerful and simple Flutter package **with pure Dart implementation** for detecting document edges and extracting document images with perspective correction. Whether you're building a scanning app, enhancing document recognition workflows, or simply need precise edge detection, Edge Vision is the tool you need.
 
+## Demo
+
+<video width="540" height="1170" controls>
+  <source src="https://raw.githubusercontent.com/alphamikle/boundaries_recognition/refs/heads/main/demo.mp4" type="video/mp4">
+  No video support
+</video>
+
+
 ## Features
 
 - 🚀 **Fast and Accurate Edge Detection**: Identify document edges with high precision, even in challenging conditions.
@@ -27,17 +35,17 @@ dependencies:
   edge_vision: ^0.0.1
 ```
 
-## Performance
+## Performance (TBD)
 
 The library is already pretty well optimised (but it will be even faster). Current figures:
 
-| Task \ Platform    | Android (Galaxy S24 Ultra) | Android (Galaxy S23 Ultra) | Android (OnePlus 7 Pro) | iOS (iPhone XR) |
-|--------------------|----------------------------|----------------------------|-------------------------|-----------------|
-| Recognition FullHD |                            |                            |                         |                 |
-| Recognition Qu     |                            |                            |                         |                 |
-|                    |                            |                            |                         |                 |
-|                    |                            |                            |                         |                 |
-|                    |                            |                            |                         |                 |
+| Task \ Platform    | Android (Galaxy S24 Ultra) | Android (OnePlus 7 Pro) | iOS (iPhone XR) | iOS (iPhone 16 Pro) |
+|--------------------|----------------------------|-------------------------|-----------------|---------------------|
+| Recognition FullHD |                            |                         |                 |                     |
+| Recognition QuadHD |                            |                         |                 |                     |
+|                    |                            |                         |                 |                     |
+|                    |                            |                         |                 |                     |
+|                    |                            |                         |                 |                     |
 
 
 ## ❗️ Disclaimer ❗️
@@ -46,7 +54,7 @@ The library is already pretty well optimised (but it will be even faster). Curre
 
 ## What next?
 
-- [ ] Stabilizing API (mostly for the `EdgeVisionSettings`)
-- [ ] Built-in 
+- [x] Stabilizing API (mostly for the `EdgeVisionSettings`)
+- [ ] Built-in object extraction
 - [ ] Improve accuracy. The Current rate is about 75% in different environments and 90%+ with "ideal environment"
 - [ ] More performance optimizations (Rewriting all the logic with pure Rust to get even higher performance)
