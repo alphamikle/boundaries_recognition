@@ -2,13 +2,9 @@
 
 Edge Vision is a powerful and simple Flutter package **with pure Dart implementation** for detecting document edges and extracting document images with perspective correction. Whether you're building a scanning app, enhancing document recognition workflows, or simply need precise edge detection, Edge Vision is the tool you need.
 
-## Demo
+## Demo (Clickable video inside)
 
-<video width="540" height="1170" controls>
-  <source src="https://raw.githubusercontent.com/alphamikle/boundaries_recognition/refs/heads/main/demo.mp4" type="video/mp4">
-  No video support
-</video>
-
+[![Click to open YouTube](https://raw.githubusercontent.com/alphamikle/boundaries_recognition/refs/heads/main/demo.gif)](https://www.youtube.com/watch?v=9ohThkRvS9I)
 
 ## Features
 
@@ -37,15 +33,12 @@ dependencies:
 
 ## Performance (TBD)
 
-The library is already pretty well optimised (but it will be even faster). Current figures:
+The library is already pretty well optimised (but it will be even faster):
 
 | Task \ Platform    | Android (Galaxy S24 Ultra) | Android (OnePlus 7 Pro) | iOS (iPhone XR) | iOS (iPhone 16 Pro) |
 |--------------------|----------------------------|-------------------------|-----------------|---------------------|
-| Recognition FullHD |                            |                         |                 |                     |
-| Recognition QuadHD |                            |                         |                 |                     |
-|                    |                            |                         |                 |                     |
-|                    |                            |                         |                 |                     |
-|                    |                            |                         |                 |                     |
+| Recognition FullHD | TBD                        | TBD                     | TBD             | TBD                 |
+| Recognition QuadHD | TBD                        | TBD                     | TBD             | TBD                 |
 
 
 ## ❗️ Disclaimer ❗️
