@@ -1,0 +1,36 @@
+{
+  "leftTop": {
+    "x": 56,
+    "y": 42
+  },
+  "rightTop": {
+    "x": 255,
+    "y": 44
+  },
+  "rightBottom": {
+    "x": 256,
+    "y": 323
+  },
+  "leftBottom": {
+    "x": 52,
+    "y": 323
+  },
+  "leftLength": 281.0284683088174,
+  "topLength": 199.01004999748127,
+  "rightLength": 279.0017921089397,
+  "bottomLength": 204.0,
+  "leftTopAngle": 89.76027439034785,
+  "rightTopAngle": 89.21882206926014,
+  "rightBottomAngle": 90.20536033749488,
+  "leftBottomAngle": 90.81554320289712,
+  "recognizedObjects": [
+    6049,
+    318,
+    389
+  ],
+  "xMoveTo": "XAxis.center",
+  "yMoveTo": "YAxis.center",
+  "relativeSquare": 0.470175,
+  "square": 56421,
+  "unrecognizedReason": null
+}

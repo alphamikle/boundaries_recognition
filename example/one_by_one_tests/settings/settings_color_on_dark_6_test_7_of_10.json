@@ -1,0 +1,17 @@
+{
+  "searchMatrixSize": 3,
+  "minObjectSize": 40,
+  "directionAngleLevel": 3.0,
+  "symmetricAngleThreshold": 0.1,
+  "skewnessThreshold": 0.15,
+  "blackWhiteThreshold": 130,
+  "sobelLevel": 1.5999999999999999,
+  "sobelAmount": 1,
+  "blurRadius": 3,
+  "areaThreshold": 0.35,
+  "luminanceThreshold": 1.1,
+  "maxImageSize": 1000,
+  "grayscaleLevel": 0.2,
+  "grayscaleAmount": 0,
+  "returnInvalidData": false
+}
